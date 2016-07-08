@@ -1,0 +1,23 @@
+{
+  "name": "cms-1",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "dependencies": {
+    "debug": "^2.2.0",
+    "http": "^0.0.0",
+    "mongodb": "^2.1.18",
+    "multiparty": "^4.1.2",
+    "path": "^0.12.7",
+    "querystring": "^0.2.0",
+    "swig": "^1.4.2",
+    "url": "^0.11.0",
+    "zanner-typeof": "^1.0.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,29 @@
+{
+	"enable": true,
+	"methods": ["post", "put"],
+	"multipart/form-data": {
+		"autoFields": true,
+		"autoFiles": true,
+		"enable": true,
+		"encoding": "utf8",
+		"maxFieldsSize": 16777216,
+		"maxFields": 1000,
+		"maxFilesSize": "Infinity",
+		"uploadDir": "tmp/upload"
+	},
+	"text/plain": {
+		"enable": true,
+		"encoding": "utf8",
+		"maxPostSize": 2097152
+	},
+	"application/x-www-form-urlencoded": {
+		"enable": true,
+		"encoding": "utf8",
+		"maxPostSize": 8388608
+	},
+	"application/json": {
+		"enable": true,
+		"encoding": "utf8",
+		"maxPostSize": 16777216
+	}
+}
