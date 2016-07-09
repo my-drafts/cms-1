@@ -2,28 +2,29 @@
 	"enable": true,
 	"methods": ["post", "put"],
 	"multipart/form-data": {
-		"autoFields": true,
-		"autoFiles": true,
 		"enable": true,
 		"encoding": "utf8",
-		"maxFieldsSize": 16777216,
-		"maxFields": 1000,
-		"maxFilesSize": "Infinity",
-		"uploadDir": "tmp/upload"
+		"postSize": 16777216,
+		"postAmount": 2048,
+		"fileSize": "Infinity",
+		"fileDir": "tmp/upload"
 	},
 	"text/plain": {
 		"enable": true,
 		"encoding": "utf8",
-		"maxPostSize": 2097152
+		"postSize": 2097152,
+		"postAmount": 128
 	},
 	"application/x-www-form-urlencoded": {
 		"enable": true,
 		"encoding": "utf8",
-		"maxPostSize": 8388608
+		"postSize": 8388608,
+		"postAmount": 128
 	},
 	"application/json": {
 		"enable": true,
 		"encoding": "utf8",
-		"maxPostSize": 16777216
+		"postSize": 16777216,
+		"postAmount": 1024
 	}
 }

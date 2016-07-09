@@ -1,5 +1,6 @@
 'use strict';
 
+
 var http = require('http');
 var post = require('../../lib/engines/post');
 
@@ -8,19 +9,26 @@ http.createServer(function(request, response){
 		request: request,
 		response: response
 	};
-	post(ns).then(function (post){
-		if (post) {
-			//console.log(ns);
-			//console.log(ns.request.headers);
-			console.log(ns.POST);
-			//console.log(ns.FILE);
-			//console.log(ns.posts());
-			//console.log(ns.post('t3'));
-			//console.log(ns.post('t2.2'));
-			//console.log(ns.fileObjects());
-			//console.log(ns.files(['path', 'size']));
-			ns.fileClean();
-			response.end('OK');
+	post(ns).then(function (){
+		if (ns.request.url==='/upload'){
+			ns.uploading({postAmount:2}).then(function (post){
+				if (post) {
+					//console.log(ns);
+					//console.log(ns.request.headers);
+					console.log(ns.POST);
+					//console.log(ns.FILE);
+					//console.log(ns.posts());
+					//console.log(ns.post('t3'));
+					//console.log(ns.post('t2.2'));
+					//console.log(ns.fileObjects());
+					//console.log(ns.files(['path', 'size']));
+					ns.uploadClean();
+					response.end('OK');
+				}
+				else {
+					response.end('?');
+				}
+			});
 		}
 		else if (ns.request.url==='/m') {
 			let html = '\
@@ -31,7 +39,7 @@ http.createServer(function(request, response){
 		<title>Document</title>\
 	</head>\
 	<body>\
-		<form method="post" enctype="multipart/form-data">\
+		<form action="/upload" method="post" enctype="multipart/form-data">\
 			<p>\
 				<input type="text" name="t3" placeholder="t3"><br />\
 				<input type="text" name="t2.2" placeholder="t2"><br />\
@@ -64,7 +72,7 @@ http.createServer(function(request, response){
 		<title>Document</title>\
 	</head>\
 	<body>\
-		<form method="post" enctype="application/x-www-form-urlencoded">\
+		<form action="/upload" method="post" enctype="application/x-www-form-urlencoded">\
 			<p>\
 				<input type="text" name="t3" placeholder="t3"><br />\
 				<input type="text" name="t2.2" placeholder="t2"><br />\
@@ -88,7 +96,7 @@ http.createServer(function(request, response){
 		<title>Document</title>\
 	</head>\
 	<body>\
-		<form method="post" enctype="text/plain">\
+		<form action="/upload" method="post" enctype="text/plain">\
 			<p>\
 				<input type="text" name="t3" placeholder="t3"><br />\
 				<input type="text" name="t2.2" placeholder="t2"><br />\
@@ -115,8 +123,8 @@ http.createServer(function(request, response){
 	<script type="text/javascript">\
 		function s (o) {\
 			$.ajax({\
-				type: "POST",\
-				url: "serverUrl",\
+				type: o.method,\
+				url: o.actions,\
 				data: JSON.stringify($(o).serializeArray()),\
 				success: function () {\
 					alert(1);\
@@ -127,7 +135,7 @@ http.createServer(function(request, response){
 		};\
 	</script>\
 	<body>\
-		<form method="post" enctype="application/json" onsubmit="s(this); return false;">\
+		<form action="/upload" method="post" enctype="application/json" onsubmit="s(this); return false;">\
 			<p>\
 				<input type="text" name="t3" placeholder="t3"><br />\
 				<input type="text" name="t2.2" placeholder="t2"><br />\
