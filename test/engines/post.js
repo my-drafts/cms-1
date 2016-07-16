@@ -2,36 +2,74 @@
 
 
 var http = require('http');
+var log = require('../../lib/engines/log');
+var meta = require('../../lib/engines/meta');
+var get = require('../../lib/engines/get');
 var post = require('../../lib/engines/post');
 
 http.createServer(function(request, response){
 	var ns = {
 		request: request,
-		response: response
+		response: response,
+		log: log,
+		SESSION_NAME: 'session',
+		SESSION_ID_LENGTH: 8,
+		SESSION_EXPIRES: 600
 	};
-	post(ns).then(function (){
-		if (ns.request.url==='/upload'){
-			ns.uploading({postAmount:2}).then(function (post){
-				if (post) {
-					//console.log(ns);
-					//console.log(ns.request.headers);
-					console.log(ns.POST);
-					//console.log(ns.FILE);
-					//console.log(ns.posts());
-					//console.log(ns.post('t3'));
-					//console.log(ns.post('t2.2'));
-					//console.log(ns.fileObjects());
-					//console.log(ns.files(['path', 'size']));
-					ns.uploadClean();
-					response.end('OK');
-				}
-				else {
-					response.end('?');
-				}
-			});
-		}
-		else if (ns.request.url==='/m') {
-			let html = '\
+
+	Promise
+		.all([
+			get(ns),
+			meta(ns),
+			post(ns)
+		])
+		.then(function (){
+			if (ns.path()=='/favicon.ico') {
+				response.end();
+				return;
+			}
+			//console.log(ns.ACCEPT);
+			//console.log(ns.ACCEPT_ENCODING);
+			//console.log(ns.ACCEPT_LANGUAGE);
+			console.log(ns.COOKIE);
+			console.log('sessionId: ' + ns.sessionId());
+			ns.cookie('q1', 'v1', { session: true });
+			ns.cookie('q2', 'v2', { expires: 2*60*1000, sameSite: true });
+			ns.cookie('q3', 'v3', { expires: 3*60*1000, sameSite: true });
+			ns.cookieDone();
+			ns.sessionCommit();
+			//console.log(ns.contentType());
+			//console.log(ns.host());
+			//console.log(ns.method());
+			//console.log(ns.path());
+			//console.log(ns.port());
+			//console.log(ns.statusCode());
+			//console.log(ns.statusMessage());
+			//console.log(ns.userAgent());
+			if (ns.request.url.match(/^[\/]upload/i)){
+				ns.uploading({}).then(function (post){
+					if (post) {
+						//console.log(ns);
+						//console.log(ns.request.headers);
+						//console.log(ns.PATH);
+						//console.log(ns.GET);
+						//console.log(ns.POST);
+						//console.log(ns.FILE);
+						//console.log(ns.posts());
+						//console.log(ns.post('t3'));
+						//console.log(ns.post('t2.2'));
+						//console.log(ns.fileObjects());
+						//console.log(ns.files(['path', 'size']));
+						ns.uploadClean();
+						response.end('OK');
+					}
+					else {
+						response.end('?');
+					}
+				});
+			}
+			else if (ns.request.url.match(/^[\/]m/i)) {
+				let html = '\
 <!DOCTYPE html>\
 <html>\
 	<head>\
@@ -61,10 +99,10 @@ http.createServer(function(request, response){
 		</form>\
 	</body>\
 </html>';
-			response.end(html);
-		}
-		else if (ns.request.url==='/u') {
-			let html = '\
+				response.end(html);
+			}
+			else if (ns.request.url.match(/^[\/]u/i)) {
+				let html = '\
 <!DOCTYPE html>\
 <html>\
 	<head>\
@@ -85,10 +123,10 @@ http.createServer(function(request, response){
 		</form>\
 	</body>\
 </html>';
-			response.end(html);
-		}
-		else if (ns.request.url==='/t') {
-			let html = '\
+				response.end(html);
+			}
+			else if (ns.request.url.match(/^[\/]t/i)) {
+				let html = '\
 <!DOCTYPE html>\
 <html>\
 	<head>\
@@ -96,7 +134,7 @@ http.createServer(function(request, response){
 		<title>Document</title>\
 	</head>\
 	<body>\
-		<form action="/upload" method="post" enctype="text/plain">\
+		<form action="/upload?x=y" method="post" enctype="text/plain">\
 			<p>\
 				<input type="text" name="t3" placeholder="t3"><br />\
 				<input type="text" name="t2.2" placeholder="t2"><br />\
@@ -109,10 +147,10 @@ http.createServer(function(request, response){
 		</form>\
 	</body>\
 </html>';
-			response.end(html);
-		}
-		else if (ns.request.url==='/j') {
-			let html = '\
+				response.end(html);
+			}
+			else if (ns.request.url.match(/^[\/]j/i)) {
+				let html = '\
 <!DOCTYPE html>\
 <html>\
 	<head>\
@@ -148,16 +186,16 @@ http.createServer(function(request, response){
 		</form>\
 	</body>\
 </html>';
-			response.end(html);
-		}
-		else {
-			let html = 'x';
-			response.end(html);
-		}
-	})
-	.catch(function (error) {
-		console.log(error);
-		response.end('Error');
-	});
+				response.end(html);
+			}
+			else {
+				let html = 'x';
+				response.end(html);
+			}
+		})
+		.catch(function (error) {
+			console.log(error);
+			response.end('Error');
+		});
 }).listen(3333);
 

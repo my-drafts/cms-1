@@ -10,6 +10,7 @@
     "multiparty": "^4.1.2",
     "path": "^0.12.7",
     "querystring": "^0.2.0",
+    "strong-store-cluster": "^1.0.1",
     "swig": "^1.4.2",
     "url": "^0.11.0",
     "zanner-typeof": "^1.0.7"

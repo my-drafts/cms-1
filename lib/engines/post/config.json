@@ -1,30 +1,28 @@
 {
 	"enable": true,
 	"methods": ["post", "put"],
-	"multipart/form-data": {
-		"enable": true,
-		"encoding": "utf8",
-		"postSize": 16777216,
-		"postAmount": 2048,
-		"fileSize": "Infinity",
-		"fileDir": "tmp/upload"
-	},
-	"text/plain": {
+	"autoUploading": false,
+	"*/*": {
 		"enable": true,
 		"encoding": "utf8",
 		"postSize": 2097152,
-		"postAmount": 128
-	},
-	"application/x-www-form-urlencoded": {
-		"enable": true,
-		"encoding": "utf8",
-		"postSize": 8388608,
-		"postAmount": 128
+		"postAmount": 128,
+		"fileSize": "Infinity",
+		"fileDir": "tmp/upload"
 	},
 	"application/json": {
-		"enable": true,
-		"encoding": "utf8",
 		"postSize": 16777216,
 		"postAmount": 1024
+	},
+	"application/x-www-form-urlencoded": {
+		"postSize": 8388608
+	},
+	"multipart/form-data": {
+		"postSize": 16777216,
+		"postAmount": 2048,
+		"fileSize": "Infinity"
+	},
+	"text/plain": {
+		"postAmount": 64
 	}
 }
