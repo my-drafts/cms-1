@@ -1,6 +1,5 @@
 {
 	"enable": true,
-	"methods": ["get", "post", "put"],
 	"autoCookieSend": true,
 	"autoSession": true
 }
