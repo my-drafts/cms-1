@@ -1,0 +1,15 @@
+{
+	"enable": true,
+	"methods": ["get", "post", "put"],
+	"autoLoading": true,
+	"*/*": {
+		"enable": true,
+		"encoding": "utf8",
+		"getSize": 2097152,
+		"getAmount": 128
+	},
+	"application/x-www-form-urlencoded": {
+		"getSize": 2097152,
+		"getAmount": 128
+	}
+}
