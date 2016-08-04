@@ -1,0 +1,40 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>J-document</title>
+</head>
+
+<script src="https://code.jquery.com/jquery-1.11.3.js"></script>
+<script type="text/javascript">
+	function s (o) {
+		$.ajax({
+			type: o.method,
+			url: o.actions,
+			data: JSON.stringify($(o).serializeArray()),
+			success: function () {
+				alert(1);
+			},
+			dataType: "json",
+			contentType : "application/json"
+		});
+	};
+</script>
+
+<body>
+<form action="/upload" method="post" enctype="application/json" onsubmit="s(this); return false;">
+	<p>
+		<input type="text" name="t3" placeholder="t3"><br />
+		<input type="text" name="t2.2" placeholder="t2"><br />
+		<input type="text" name="t2.2" placeholder="t2"><br />
+		<input type="text" name="t1" placeholder="t1"><br />
+		<input type="text" name="t1" placeholder="t1"><br />
+		<input type="text" name="t1" placeholder="t1"><br />
+	</p>
+	<input type="submit" >
+</form>
+</body>
+
+</html>

@@ -1,0 +1,64 @@
+{
+	"accept": {
+		"enable": true,
+		"case": "lower"
+	},
+	"acceptEncoding": {
+		"enable": true,
+		"case": "lower"
+	},
+	"acceptLanguage": {
+		"enable": true,
+		"case": "lower"
+	},
+	"contentType": {
+		"enable": true,
+		"case": "lower"
+	},
+	"cookie": {
+		"enable": true,
+		"autoSend": true,
+		"maxAge": null,
+		"domain": null,
+		"path": "/",
+		"expires": null,
+		"httpOnly": null,
+		"secure": null,
+		"siteOnly": null
+	},
+	"host": {
+		"enable": true,
+		"case": "lower",
+		"reverse": false
+	},
+	"method": {
+		"enable": true,
+		"case": "lower"
+	},
+	"path": {
+		"enable": true,
+		"case": "lower"
+	},
+	"port": {
+		"enable": true
+	},
+	"session": {
+		"enable": true,
+		"autoStart": true,
+		"autoDone": true,
+		"idName": "sessionId",
+		"idLength": 16,
+		"expires": 600
+	},
+	"statusCode": {
+		"enable": true
+	},
+	"statusMessage": {
+		"enable": true,
+		"case": "lower"
+	},
+	"userAgent": {
+		"enable": true,
+		"case": "lower"
+	}
+}

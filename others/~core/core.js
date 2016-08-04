@@ -2,7 +2,7 @@
 
 var http = require('http');
 var config = require('./config');
-var core = require('../lib/core');
+var core = require('../../lib/core');
 
 module.exports = function(httpOptions){
 	var server = http.createServer(function(request, response){
