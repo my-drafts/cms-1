@@ -1,7 +1,7 @@
 {
 	"enable": true,
 	"case": "lower",
-	"mode": "debug",
+	"mode": "trace",
 	"modes": {
 		"fatal": {
 			"alias": ["fatal", "f", 6],

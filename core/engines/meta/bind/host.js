@@ -1,6 +1,7 @@
 'use strict';
 
 
+var a = require('../lib/actions');
 var type = require('zanner-typeof'), of = type.of;
 
 
@@ -11,99 +12,82 @@ var reverse = function(a){
 	A.reverse();
 	return A;
 };
+var get = function(ns, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-host.get', ['call']);
+	let result = ns.g('HOST').join('.');
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-host.get', ['called', result]);
+	return result;
+};
+var equal = function(ns, h, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-host.equal', ['call', h]);
+	let result = false;
+	if(of(h, 'array')){
+		result = equal(ns, h.join('.'), true);
+	}
+	else if(of(h, 'string')){
+		result = get(ns, true)===h;
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-host.equal', ['called', result]);
+	return result;
+};
+var like = function(ns, h, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-host.like', ['call', h]);
+	let result = false;
+	if(of(h, 'array')){
+		result = h.some(function(item, index){
+			return like(ns, item, true);
+		});
+	}
+	else if(of(h, 'regexp')){
+		result = h.test(get(ns, true));
+	}
+	else{
+		result = equal(ns, h, true);
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-host.like', ['called', result]);
+	return result;
+};
 
 
 var init = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['host init']);
-	let RE = /^(?:[^\:]*?[\:][^\@]*?[\@])?(.*?)(?:[\:][\d]+)?$/i;
-	let value = [];
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-host.init', []);
 	if(config.enable===true){
-		let key = 'host';
-		value = ns.request.headers[key] || '';
-		switch(config.case){
-			case 'lower':
-				value = value.toLowerCase();
-				break;
-			case 'upper':
-				value = value.toUpperCase();
-				break;
-		}
-		value = value.replace(RE, '$1');
-		value = value.split('.');
+		let RE = /^(?:[^\:]*?[\:][^\@]*?[\@])?(.*?)(?:[\:][\d]+)?$/i;
+		let host = a.value2case(config, ns.request.headers['host'], '');
+		host = host.replace(RE, '$1');
+		host = host.split('.');
 		if(config.reverse===true){
-			value = reverse(value);
+			host = reverse(host);
 		}
+		ns.s('HOST', host, true);
 	}
-	ns.HOST = value;
-	Object.freeze(ns.HOST);
+	else{
+		ns.s('HOST', [], true);
+	}
+	ns.s('host', function(){
+		return get(ns, config.quiet);
+	}, true);
+	ns.s('hostEqual', function(h){
+		return equal(ns, h, config.quiet);
+	}, true);
+	ns.s('hostLike', function(h){
+		return like(ns, h, config.quiet);
+	}, true);
+	return Promise.resolve({host: config.enable===true});
 };
 module.exports.init = init;
 
 
-var get = function(ns){
-	ns.log('TRACE', 'engine::meta', ['host init']);
-	ns.host = function(){
-		ns.log('DEBUG', 'engine::meta', ['call host']);
-		let result = ns.HOST.join('.');
-		ns.log('DEBUG', 'engine::meta', ['called host', result]);
-		return result;
-	};
-	Object.freeze(ns.host);
-};
-module.exports.host = get;
-
-
-var equal = function(ns){
-	ns.log('TRACE', 'engine::meta', ['hostEqual init']);
-	ns.hostEqual = function(h){
-		ns.log('DEBUG', 'engine::meta', ['call hostEqual', h]);
-		let result = false;
-		if(of(h, 'array')){
-			result = ns.hostEqual(h.join('.'));
-		}
-		else if(of(h, 'string')){
-			result = ns.HOST.join('.')===h;
-		}
-		ns.log('DEBUG', 'engine::meta', ['called hostEqual', result]);
-		return result;
-	};
-	Object.freeze(ns.hostEqual);
-};
-module.exports.hostEqual = equal;
-
-
-var like = function(ns){
-	ns.log('TRACE', 'engine::meta', ['hostLike init']);
-	ns.hostLike = function(h){
-		ns.log('DEBUG', 'engine::meta', ['call hostLike', h]);
-		let result = false;
-		if(of(h, 'array')){
-			result = h.some(function(item, index){
-				return ns.hostLike(item);
-			});
-		}
-		else if(of(h, 'regex')){
-			result = h.test(ns.HOST.join('.'));
-		}
-		else{
-			result = ns.hostEqual(h);
-		}
-		ns.log('DEBUG', 'engine::meta', ['called hostLike', result]);
-		return result;
-	};
-	Object.freeze(ns.hostLike);
-};
-module.exports.hostLike = like;
-
-
 var auto = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['hostAuto init']);
-	ns.hostAuto = function(options){
-		ns.log('TRACE', 'engine::meta', ['call hostAuto']);
-		options = Object.assign({}, config, options);
-		return Promise.resolve(options.enable===true);
-	};
-	Object.freeze(ns.hostAuto);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-host.auto', []);
+	return Promise.resolve({host: config.enable===true});
 };
-module.exports.hostAuto = auto;
+module.exports.auto = auto;
+
+
+var done = function(ns, config){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-host.done', []);
+	return Promise.resolve({host: config.enable===true});
+};
+module.exports.done = done;
 

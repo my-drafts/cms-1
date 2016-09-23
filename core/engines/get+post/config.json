@@ -1,4 +1,16 @@
 {
+	"binds": [
+		{
+			"enable": true,
+			"name": "get",
+			"path": "./bind/get"
+		},
+		{
+			"enable": true,
+			"name": "post",
+			"path": "./bind/post"
+		}
+	],
 	"get": {
 		"enable": true,
 		"auto": true,
@@ -16,8 +28,12 @@
 	},
 	"post": {
 		"enable": true,
-		"methods": ["post", "put"],
+		"methods": [
+			"post",
+			"put"
+		],
 		"auto": false,
+		"clean": true,
 		"quiet": false,
 		"*/*": {
 			"enable": true,

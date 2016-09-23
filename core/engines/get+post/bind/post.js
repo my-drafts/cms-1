@@ -1,11 +1,11 @@
 'use strict';
 
 
-var a = require('./../actions');
-var post_json = require('./../post-application_json');
-var post_form_urlencoded = require('./../post-application_x-www-form-urlencoded');
-var post_multipart = require('./../post-multipart_form-data');
-var post_plain = require('./../post-text_plain');
+var a = require('../lib/actions');
+var post_json = require('../lib/post/application_json');
+var post_form_urlencoded = require('../lib/post/application_x-www-form-urlencoded');
+var post_multipart = require('../lib/post/multipart_form-data');
+var post_plain = require('../lib/post/text_plain');
 var fs = require('fs');
 var type = require('zanner-typeof'), of = type.of;
 
@@ -19,21 +19,21 @@ var type = require('zanner-typeof'), of = type.of;
 // }
 //
 var postKeys = function(ns, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call posts']);
-	let result = a.akeys(ns.POST);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called posts', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.postKeys', ['call']);
+	let result = a.akeys(ns.g('POST'));
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.postKeys', ['called', result]);
 	return result;
 };
 var postAmount = function(ns, name, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call postAmount', name]);
-	let result = a.alength(ns.POST, name);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called postAmount', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.postAmount', ['call', name]);
+	let result = a.alength(ns.g('POST'), name);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.postAmount', ['called', result]);
 	return result;
 };
 var post = function(ns, name, index, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call post', name, index]);
-	let result = a.aitem(ns.POST, name, index);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called post', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.post', ['call', name, index]);
+	let result = a.aitem(ns.g('POST'), name, index);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.post', ['called', result]);
 	return result;
 };
 var postObjectsWalk = function(item, index, field){
@@ -44,9 +44,9 @@ var postObjectsWalk = function(item, index, field){
 	};
 };
 var postObjects = function(ns, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call postObjects']);
-	let result = a.awalk(ns.POST, postObjectsWalk);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called postObjects', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.postObjects', ['call']);
+	let result = a.awalk(ns.g('POST'), postObjectsWalk);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.postObjects', ['called', result]);
 	return result;
 };
 
@@ -73,135 +73,130 @@ var postObjects = function(ns, quiet){
 // }
 //
 var uploadKeys = function(ns, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call uploads']);
-	let result = a.akeys(ns.UPLOAD);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called uploads', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadKeys', ['call']);
+	let result = a.akeys(ns.g('UPLOAD'));
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadKeys', ['called', result]);
 	return result;
 };
 var uploadAmount = function(ns, name, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call uploadAmount', name]);
-	let result = a.alength(ns.UPLOAD, name);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called uploadAmount', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadAmount', ['call', name]);
+	let result = a.alength(ns.g('UPLOAD'), name);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadAmount', ['called', result]);
 	return result;
 };
 var upload = function(ns, name, index, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call upload', name, index]);
-	let result = a.aitem(ns.UPLOAD, name, index);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called upload', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.upload', ['call', name, index]);
+	let result = a.aitem(ns.g('UPLOAD'), name, index);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.upload', ['called', result]);
 	return result;
 };
 var uploadCleanWalk = function(item, index, field){
-	fs.unlink(item.path, function(error){
+	return new Promise(function(resolve, reject){
+		fs.unlink(item.path, function(error){
+			if(error){
+				resolve(Object.assign({}, item, {index: index}, {error: error}));
+			}
+			else{
+				let result = Object.assign({}, item, {index: index});
+				resolve(result); // reject(result);
+			}
+		});
 	});
-	return item.path;
 };
 var uploadClean = function(ns, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call uploadClean']);
-	let result = a.awalk(ns.UPLOAD, uploadCleanWalk);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called uploadClean', result]);
-	return result;
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadClean', ['call']);
+	let items = a.awalk(ns.g('UPLOAD'), uploadCleanWalk);
+	return Promise.all(items).then(function(result){
+		quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadClean', ['called', result]);
+	});
 };
 var uploadObjects = function(ns, key, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call uploadObjects', key]);
-	let result = a.aitems(ns.UPLOAD, key);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called uploadObjects', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadObjects', ['call', key]);
+	let result = a.aitems(ns.g('UPLOAD'), key);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadObjects', ['called', result]);
 	return result;
 };
 var uploadPathsWalk = function(item, index, field){
 	return item.path;
 };
 var uploadPaths = function(ns, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call uploadPaths']);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadPaths', ['call']);
 	let result = a.awalk(ns.UPLOAD, uploadPathsWalk);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called uploadPaths', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadPaths', ['called', result]);
 	return result;
 };
 var uploadContentType = function(ns, name, index, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call uploadContentType', name, index]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadContentType', ['call', name, index]);
 	let result = a.afitem(ns.UPLOAD, 'contentType', name, index);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called uploadContentType', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadContentType', ['called', result]);
 	return result;
 };
 var uploadName = function(ns, name, index, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call uploadName', name, index]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadName', ['call', name, index]);
 	let result = a.afitem(ns.UPLOAD, 'name', name, index);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called uploadName', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadName', ['called', result]);
 	return result;
 };
 var uploadPath = function(ns, name, index, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call uploadPath', name, index]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadPath', ['call', name, index]);
 	let result = a.afitem(ns.UPLOAD, 'path', name, index);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called uploadPath', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadPath', ['called', result]);
 	return result;
 };
 var uploadSize = function(ns, name, index, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['call uploadSize', name, index]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadSize', ['call', name, index]);
 	let result = a.afitem(ns.UPLOAD, 'size', name, index);
-	quiet ? 0 : ns.log('DEBUG', 'engine::post', ['called uploadSize', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.post.uploadSize', ['called', result]);
 	return result;
 };
 
 
 var init = function(ns, config){
-	config.quiet ? 0 : ns.log('TRACE', 'engine::post', ['init']);
-	ns.POST = {};
-	ns.UPLOAD = {};
-	ns.postKeys = function(){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.post.init', []);
+	ns.s('POST', {}, false);
+	ns.s('UPLOAD', {}, false);
+	ns.s('postKeys', function(){
 		return postKeys(ns, config.quiet);
-	};
-	ns.postAmount = function(name){
+	}, true);
+	ns.s('postAmount', function(name){
 		return postAmount(ns, name, config.quiet);
-	};
-	ns.post = function(name, index){
+	}, true);
+	ns.s('post', function(name, index){
 		return post(ns, name, index, config.quiet);
-	};
-	ns.postObjects = function(){
+	}, true);
+	ns.s('postObjects', function(){
 		return postObjects(ns, config.quiet);
-	};
-	ns.uploadKeys = function(ns){
+	}, true);
+	ns.s('uploadKeys', function(ns){
 		return uploadKeys(ns, config.quiet);
-	};
-	ns.uploadAmount = function(name){
+	}, true);
+	ns.s('uploadAmount', function(name){
 		return uploadAmount(ns, name, config.quiet);
-	};
-	ns.upload = function(name, index){
+	}, true);
+	ns.s('upload', function(name, index){
 		return upload(ns, name, index, config.quiet);
-	};
-	ns.uploadClean = function(){
+	}, true);
+	ns.s('uploadClean', function(){
 		return uploadClean(ns, config.quiet);
-	};
-	ns.uploadObjects = function(key){
+	}, true);
+	ns.s('uploadObjects', function(key){
 		return uploadObjects(ns, key, config.quiet);
-	};
-	ns.uploadPaths = function(){
+	}, true);
+	ns.s('uploadPaths', function(){
 		return uploadPaths(ns, config.quiet);
-	};
-	ns.uploadContentType = function(name, index){
+	}, true);
+	ns.s('uploadContentType', function(name, index){
 		return uploadContentType(ns, name, index, config.quiet);
-	};
-	ns.uploadName = function(name, index){
+	}, true);
+	ns.s('uploadName', function(name, index){
 		return uploadName(ns, name, index, config.quiet);
-	};
-	ns.uploadPath = function(name, index){
+	}, true);
+	ns.s('uploadPath', function(name, index){
 		return uploadPath(ns, name, index, config.quiet);
-	};
-	ns.uploadSize = function(name, index){
+	}, true);
+	ns.s('uploadSize', function(name, index){
 		return uploadSize(ns, name, index, config.quiet);
-	};
-	Object.freeze(ns.posts);
-	Object.freeze(ns.postAmount);
-	Object.freeze(ns.post);
-	Object.freeze(ns.postObjects);
-	Object.freeze(ns.uploads);
-	Object.freeze(ns.uploadAmount);
-	Object.freeze(ns.upload);
-	Object.freeze(ns.uploadClean);
-	Object.freeze(ns.uploadObjects);
-	Object.freeze(ns.uploadPaths);
-	Object.freeze(ns.uploadContentType);
-	Object.freeze(ns.uploadName);
-	Object.freeze(ns.uploadPath);
-	Object.freeze(ns.uploadSize);
+	}, true);
 	return Promise.resolve({post: config.enable===true});
 };
 module.exports.init = init;
@@ -254,47 +249,50 @@ var autoLoading = function(ns, config){
 	}
 };
 var auto = function(ns, config){
-	config.quiet ? 0 : ns.log('TRACE', 'engine::post', ['auto']);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.post.auto', []);
 	let loaded = undefined;
 	let al = autoLoading(ns, config);
 	let loading = al.loading, loadingOptions = al.loadingOptions, loadMIME = al.loadMIME;
-	if(config.enable!==true){
-		config.quiet ? 0 : ns.log('DEBUG', 'engine::post', ['auto disabled']);
-		return Promise.resolve({post: false});
-	}
-	else if(loaded){
-		config.quiet ? 0 : ns.log('DEBUG', 'engine::post', ['auto from loaded', loaded]);
+	if(loaded!==undefined){
+		config.quiet ? 0 : ns.log('DEBUG', 'engine.post.auto', ['from loaded', loaded]);
 		return Promise.resolve({post: loaded>0});
 	}
+	else if(config.enable!==true){
+		config.quiet ? 0 : ns.log('DEBUG', 'engine.post.auto', ['disabled']);
+		ns.f('POST');
+		ns.f('UPLOAD');
+		loaded = -3;
+		return Promise.resolve({post: false});
+	}
 	else if(loading===false){
-		config.quiet ? 0 : ns.log('DEBUG', 'engine::post', ['auto with no post-method']);
-		Object.freeze(ns.POST);
-		Object.freeze(ns.UPLOAD);
+		config.quiet ? 0 : ns.log('DEBUG', 'engine.post.auto', ['no post-method']);
+		ns.f('POST');
+		ns.f('UPLOAD');
 		loaded = 2;
 		return Promise.resolve({post: true});
 	}
 	else if(!loading){
-		config.quiet ? 0 : ns.log('WARNING', 'engine::post', ['auto with unknown encntype', loadMIME]);
-		Object.freeze(ns.POST);
-		Object.freeze(ns.UPLOAD);
+		config.quiet ? 0 : ns.log('WARNING', 'engine.post.auto', ['enctype unknown', loadMIME]);
+		ns.f('POST');
+		ns.f('UPLOAD');
 		loaded = -2;
 		return Promise.resolve({post: false});
 	}
 	else{
-		config.quiet ? 0 : ns.log('DEBUG', 'engine::post', ['auto enable']);
+		config.quiet ? 0 : ns.log('DEBUG', 'engine.post.auto', ['enable']);
 		let options = Object.assign({}, config['*/*'], loadingOptions);
 		return loading(ns, options)
 			.then(function(result){
-				config.quiet ? 0 : ns.log('DEBUG', 'engine::post', ['auto successes']);
-				Object.freeze(ns.POST);
-				Object.freeze(ns.UPLOAD);
+				config.quiet ? 0 : ns.log('DEBUG', 'engine.post.auto', ['successes']);
+				ns.f('POST');
+				ns.f('UPLOAD');
 				loaded = 1;
 				return {post: true};
 			})
 			.catch(function(error){
-				config.quiet ? 0 : ns.log('ERROR', 'engine::post', ['auto unsuccesses', error]);
-				Object.freeze(ns.POST);
-				Object.freeze(ns.UPLOAD);
+				config.quiet ? 0 : ns.log('ERROR', 'engine.post.auto', ['unsuccesses', error]);
+				ns.f('POST');
+				ns.f('UPLOAD');
 				loaded = -1;
 				return error;
 			});
@@ -304,10 +302,11 @@ module.exports.auto = auto;
 
 
 var done = function(ns, config){
-	config.quiet ? 0 : ns.log('TRACE', 'engine::post', ['done']);
-	// ???
-	// ns.uploadClean();
-	return Promise.resolve({post: config.enable===true});
+	config.quiet ? 0 : ns.log('TRACE', 'engine.post.done', []);
+	let cleaned = function(){
+		return Promise.resolve({post: config.enable===true});
+	};
+	return (config.enable===true && config.cleanUp===true) ? ns.uploadClean().then(cleaned) : cleaned();
 };
 module.exports.done = done;
 

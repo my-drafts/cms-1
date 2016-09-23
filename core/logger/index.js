@@ -2,23 +2,11 @@
 
 
 var config = require('./config');
-var util = require('util');
+var uf = require('util').format;
 var type = require('zanner-typeof'), of = type.of;
 
 
-module.exports = function (level, service, message, code) {
-	if (config.enable===true) {
-		let l = __level2property(level, 'code', -1);
-		let mode = __level2property(config.mode, 'code', -1);
-		if (l>=mode) {
-			let msg = __message(level, service, message, code);
-			console.log(msg);
-		}
-	}
-};
-
-
-var __level2property = function (level, propertyName, defaultValue) {
+var level2property = function (level, propertyName, defaultValue) {
 	level = String(level);
 	// config.case
 	if (config.case==='lower') {
@@ -42,13 +30,31 @@ var __level2property = function (level, propertyName, defaultValue) {
 	}
 	return result;
 };
+var concatMessage = function (level, service, message, code) {
+	let l = level2property(level, 'title', '?');
+	let s = of(service, 'string') ? service : '?';
+	let m = '';
+	if(of(message, 'string')){
+		m = uf(': %s%s', message, '');
+	}
+	else if(of(message, 'array') && message.length>0){
+		m = of(message[0], 'string') ? uf('%s', message[0]) : '';
+		let mm = message.length>1 ? uf(' %j', message.slice(1)) : '';
+		m = uf(': %s%s', m, mm);
+	}
+	let c = of(code, 'number') ? uf(' [%s]', code) : '';
+	return uf('%s(%s)%s%s.', l, s, c, m);
+};
 
-var __message = function (level, service, message, code) {
-	let l = __level2property(level, 'title', '?');
-	let s = service;
-	let m = of(message, 'array') ? message[0] : message;
-	let mm = of(message, 'array') ? util.format(' [%j]', message.slice(1)) : '';
-	let c = code ? util.format(' [%s]', code) : '';
-	return util.format('%s(%s)%s: %s%s.', l, s, c, m, mm);
+
+module.exports = function (level, service, message, code) {
+	if (config.enable===true) {
+		let l = level2property(level, 'code', -1);
+		let mode = level2property(config.mode, 'code', -1);
+		if (l>=mode) {
+			let msg = concatMessage(level, service, message, code);
+			console.log(msg);
+		}
+	}
 };
 

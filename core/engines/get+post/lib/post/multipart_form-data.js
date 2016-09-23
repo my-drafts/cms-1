@@ -1,6 +1,11 @@
 'use strict';
 
 
+var a = require('./../actions');
+var multiparty = require('multiparty');
+var type = require('zanner-typeof'), of = type.of;
+
+
 // post
 //
 // {
@@ -9,8 +14,6 @@
 //   ...
 // }
 //
-
-
 // upload
 //
 // {
@@ -32,11 +35,6 @@
 //   ...
 // }
 //
-
-
-var a = require('./actions');
-var multiparty = require('multiparty');
-var type = require('zanner-typeof'), of = type.of;
 var optionSpaceMap = {
 	enable: 'enable', // boolean
 	encoding: 'encoding', // string:'utf8'
@@ -48,7 +46,7 @@ var optionSpaceMap = {
 
 
 // multipart/form-data
-module.exports = function (nameSpace, optionSpace) {
+module.exports = function(nameSpace, optionSpace){
 	let ns = nameSpace;
 	let os = optionSpace;
 	let osm = optionSpaceMap;
@@ -56,12 +54,12 @@ module.exports = function (nameSpace, optionSpace) {
 		autoFields: true,
 		autoFiles: true,
 		encoding: 'utf8',
-		maxFieldsSize: 1024 * 8, // 8kb
+		maxFieldsSize: 1024*8, // 8kb
 		maxFields: 8,
-		maxFilesSize: 1024 * 1024 * 8, // 'Infinity'
+		maxFilesSize: 1024*1024*8, // 'Infinity'
 		uploadDir: 'tmp/upload'
 	};
-	let files2file = function (file, index) {
+	let files2file = function(file, index){
 		let f = {
 			contentType: file.headers['content-type'],
 			field: file.fieldName,
@@ -73,25 +71,25 @@ module.exports = function (nameSpace, optionSpace) {
 		};
 		return f;
 	};
-	let files2files = function (files) {
+	let files2files = function(files){
 		let items = {};
-		for (let fn in files) {
+		for(let fn in files){
 			items[fn] = files[fn].map(files2file);
 		}
 		return items;
 	};
-	return new Promise (function (resolve, reject) {
-		if (os && os.enable===true) {
+	return new Promise(function(resolve, reject){
+		if(os && os.enable===true){
 			Object.assign(o, a.options4map(osm, os));
-			if (o.maxFilesSize<0) {
+			if(o.maxFilesSize<0){
 				o.maxFilesSize = 'Infinity';
 			}
 			let form = new multiparty.Form(o);
-			form.parse(ns.request, function (error, fields, files) {
-				if (error) {
-					reject('multipart/form-data POST: ' + error);
+			form.parse(ns.request, function(error, fields, files){
+				if(error){
+					reject('multipart/form-data POST: '+error);
 				}
-				else {
+				else{
 					Object.assign(ns.POST, fields);
 					files = files2files(files);
 					Object.assign(ns.UPLOAD, files);
@@ -99,7 +97,7 @@ module.exports = function (nameSpace, optionSpace) {
 				}
 			});
 		}
-		else {
+		else{
 			resolve(ns);
 		}
 	});

@@ -4,42 +4,42 @@
 var of = require('zanner-typeof');
 
 
-var akeys = function (O) {
+var akeys = function(O){
 	return Object.keys(O);
 };
 module.exports.akeys = akeys;
 
 
-var alength = function (O, key) {
+var alength = function(O, key){
 	return of(O[key], 'array') ? O[key].length : -1;
 };
 module.exports.alength = alength;
 
 
-var aitem = function (O, key, index) {
+var aitem = function(O, key, index){
 	let L = alength(O, key);
-	if (L===1) {
+	if(L===1){
 		return O[key][0];
 	}
-	else if (L>1) {
-		return of(index, 'number') ? O[key][((index % L) + L) % L] : O[key];
+	else if(L>1){
+		return of(index, 'number') ? O[key][((index%L)+L)%L] : O[key];
 	}
-	else {
+	else{
 		throw 'Error [EngineData]: Unknown in item';
 	}
 };
 module.exports.aitem = aitem;
 
 
-var awalk = function (O, walk) {
+var awalk = function(O, walk){
 	let result = [];
-	for (let key in O) {
+	for(let key in O){
 		let length = alength(O, key);
-		for (let i=0; i<length; i++) {
+		for(let i = 0; i<length; i++){
 			let item = O[key][i];
-			if (of(walk, 'function')) {
+			if(of(walk, 'function')){
 				let iresult = walk(item, i, key);
-				if (!of(iresult, 'undefined')){
+				if(!of(iresult, 'undefined')){
 					item = iresult;
 				}
 			}
@@ -51,34 +51,34 @@ var awalk = function (O, walk) {
 module.exports.awalk = awalk;
 
 
-var aitems = function (O, key) {
-	if (of(key, 'string')) {
-		let walk = function (item, index, field) {
+var aitems = function(O, key){
+	if(of(key, 'string')){
+		let walk = function(item, index, field){
 			return item[key];
 		};
 		return awalk(O, walk);
 	}
-	else if (of(key, 'array')) {
-		let walk = function (item, index, field) {
+	else if(of(key, 'array')){
+		let walk = function(item, index, field){
 			let result = {};
-			for (var i=0; i<key.length; i++) {
+			for(var i = 0; i<key.length; i++){
 				result[key[i]] = item[key[i]];
 			}
 			return result;
 		};
 		return awalk(O, walk);
 	}
-	else {
+	else{
 		return awalk(O);
 	}
 };
 module.exports.aitems = aitems;
 
 
-var afitem = function (O, filter, key, index) {
+var afitem = function(O, filter, key, index){
 	let result = aitem(O, key, index ? index : 0);
-	if (of(filter, 'array')){
-		for (let i=0; i<filter.length; i++){
+	if(of(filter, 'array')){
+		for(let i = 0; i<filter.length; i++){
 			result = result[filter[i]];
 		}
 	}
@@ -90,10 +90,10 @@ var afitem = function (O, filter, key, index) {
 module.exports.afitem = afitem;
 
 
-var options4map = function (map, space) {
+var options4map = function(map, space){
 	let result = {}, s = space;
-	for (var m in map) {
-		if (s && (m in s)) {
+	for(var m in map){
+		if(s && (m in s)){
 			result[map[m]] = space[m];
 		}
 	}
@@ -102,15 +102,15 @@ var options4map = function (map, space) {
 module.exports.options4map = options4map;
 
 
-var data2parse = function (data, parser, options) {
+var data2parse = function(data, parser, options){
 	let body = parser(data, options);
-	if (options.size>0 && body.length>options.size) {
+	if(options.size>0 && body.length>options.size){
 		return Promise.reject('too long size');
 	}
-	else if (options.amount>0 && Object.keys(body.items)>options.amount) {
+	else if(options.amount>0 && Object.keys(body.items)>options.amount){
 		return Promise.reject('too many amount');
 	}
-	else {
+	else{
 		return Promise.resolve(body.items);
 	}
 };

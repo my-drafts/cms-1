@@ -1,221 +1,225 @@
 'use strict';
 
 
-var a = require('./../lib/actions');
+var a = require('../lib/actions');
+var strong_store_cluster = require('strong-store-cluster');
 var type = require('zanner-typeof'), of = type.of;
 
 
 var sessionOptionsDefault = {
-	idName: 'session',
-	idLength: 8,
-	expires: 240
+	sessionIdCookieName: 'session',
+	sessionIdLength: 8,
+	sessionIdExpires: 240
+};
+Object.freeze(sessionOptionsDefault);
+var sessionOptions = Object.assign({}, sessionOptionsDefault);
+// store: {
+//   id: string,
+//   created: datetime,
+//   data: JSON
+// }
+var storeCollectionGet = function(collection, key, expires){
+	return new Promise(function(resolve, reject){
+		expires ? collection.configure({expireKeys: expires}) : 0;
+		collection.get(key, function(error, data){
+			error ? reject(error) : resolve(data);
+		});
+	});
+};
+var storeCollectionSet = function(collection, key, value, expires){
+	return new Promise(function(resolve, reject){
+		expires ? collection.configure({expireKeys: expires}) : 0;
+		collection.set(key, value, function(error){
+			error ? reject(error) : resolve();
+		});
+	});
+};
+var storeDataGetter = function(id, expires){
+	let sid = 'session-'+id, collection = strong_store_cluster.collection(sid), key = 'data';
+	return storeCollectionGet(collection, key, expires);
+};
+var storeDataSetter = function(id, data, expires){
+	let sid = 'session-'+id, collection = strong_store_cluster.collection(sid), key = 'data';
+	return storeCollectionSet(collection, key, JSON.stringify(data), expires);
+};
+var storeIdChecker = function(id, expires){
+	let sid = 'session-'+id, collection = strong_store_cluster.collection(sid), key = 'created';
+	let now = (new Date()).toUTCString(), ee = {id: id, exists: true}, ue = function(){
+		return {id: id, exists: false};
+	};
+	return storeCollectionGet(collection, key, expires).then(function(created){
+		return created===undefined ? storeCollectionSet(collection, key, now, expires).then(ue) : ee;
+	});
+};
+// id: string
+var generateId = function(length){
+	let value = Math.random().toString(36).substr(2);
+	return (length>16) ? value.concat(generateId(length-16)) : (length>0) ? value.substr(0, length) : value;
+};
+var generateIdUnique = function(length, checker){
+	let id = generateId(length);
+	let checked = function(check){
+		return !check.exists ? generateIdUnique(length, checker) : check.id;
+	};
+	return checker(id).then(checked);
+};
+//
+var del = function(ns, key, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.del', ['call', key]);
+	let data = ns.g('SESSION_DATA');
+	let result = undefined;
+	if(of(key, 'string') && (key in data)){
+		result = data[key];
+		data[key] = undefined;
+		delete data[key];
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.del', ['called', result]);
+	return result;
+};
+var get = function(ns, key, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.get', ['call', key]);
+	let data = ns.g('SESSION_DATA');
+	let result = !of(key, 'string') ? data : (key in data) ? data[key] : undefined;
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.get', ['called', result]);
+	return result;
+};
+var set = function(ns, key, value, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.set', ['call', key, value]);
+	let result = undefined;
+	if(of(key, 'string') && value!==undefined){
+		ns.g('SESSION_DATA')[key] = value;
+		result = value;
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.set', ['called', result]);
+	return result;
+};
+var getId = function(ns, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.id', ['call']);
+	let result = ns.g('SESSION_ID');
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.id', ['called', result]);
+	return result;
+};
+var beginning = function(ns, quiet){
+	let setId = function(id){
+		console.log('xxx', id);
+		quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.beginning-setId', ['call', id]);
+		ns.s('SESSION_ID', id, true);
+		console.log('xxx2', id);
+		return id;
+	};
+	let setIdCookie = function(id, options){
+		console.log('xxx3', id);
+		quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.beginning-setIdCookie', ['call', id]);
+		ns.c('cookie', [sessionOptions.sessionIdCookieName, id, Object.assign({siteOnly: true}, options)]);
+		return id;
+	};
+	let checker = function(id){
+		return storeIdChecker(id, sessionOptions.sessionIdExpires);
+	};
+	quiet ? 0 : ns.log('TRACE', 'engine.meta-session.beginning', ['call']);
+	if(ns.g('SESSION_ID')){
+		quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.beginning-twice', ['call', ns.g('SESSION_ID')]);
+		return Promise.resolve(ns.g('SESSION_ID'));
+	}
+	else if(!ns.c('cookie', [sessionOptions.sessionIdCookieName])){
+		quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.beginning-new', ['call']);
+		return generateIdUnique(sessionOptions.sessionIdLength, checker)
+			.then(function(id){
+				quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.beginning-new', ['called', id]);
+				return id;
+			})
+			.then(setId)
+			.then(setIdCookie);
+	}
+	return storeIdChecker(ns.cookie(sessionOptions.sessionIdCookieName), sessionOptions.sessionIdExpires)
+		.then(function(check){
+			if(check.exists){
+				quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.beginning-cookie', ['call', check.id]);
+				return storeDataGetter(check.id, sessionOptions.sessionIdExpires)
+					.then(function(data){
+						quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.beginning-getData', ['call', data]);
+						ns.s('SESSION_DATA', Object.assign(ns.g('SESSION_DATA'), data), false);
+						return setId(check.id);
+					})
+					.catch(function(error){
+						quiet ? 0 : ns.log('ERROR', 'engine.meta-session.beginning-getData', ['call', error]);
+						setId(false);
+						setIdCookie('', {expires: -1});
+						return error;
+					});
+			}
+			else{
+				quiet ? 0 : ns.log('DEBUG', 'engine.meta-session-beginning-cookie-renew', ['call', check.id]);
+				return Promise.resolve(check.id).then(setId).then(setIdCookie);
+				//setId(false);
+				//setIdCookie('', -1);
+				//return Promise.resolve(false);
+			}
+		});
+};
+var ending = function(ns, quiet){
+	let id = ns.g('SESSION_ID'), data = ns.g('SESSION_DATA');
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-session.ending', ['call', id]);
+	return id ? storeDataSetter(id, data, sessionOptions.expires) : Promise.resolve();
 };
 
 
-var init = function (ns, config) {
-	ns.log('TRACE', 'engine::meta', ['accept init']);
-	Object.assign(sessionOptionsDefault, config);
-	Object.freeze(sessionOptionsDefault);
-	// session-cookie-id-name
-	//ns.SESSION_NAME = sessionOptionsDefault.idName;
-	//Object.freeze(ns.SESSION_NAME);
-	// session-cookie-id-length
-	//ns.SESSION_ID_LENGTH = sessionOptionsDefault.idLength;
-	//Object.freeze(ns.SESSION_ID_LENGTH);
-	// session-cookie-id-expires
-	//ns.SESSION_EXPIRES = sessionOptionsDefault.expires;
-	//Object.freeze(ns.SESSION_EXPIRES);
-	ns.SESSION_ID = false;
-	ns.SESSION_DATA = {};
-	if (config.enable!==true) {
-		Object.freeze(ns.SESSION_ID);
-		Object.freeze(ns.SESSION_DATA);
-	}
+var init = function(ns, config){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-session.init', []);
+	sessionOptions = Object.assign({}, sessionOptions, config.options);
+	Object.freeze(sessionOptions);
+	ns.s('SESSION_ID', false, config.enable!==true);
+	ns.s('SESSION_DATA', {}, config.enable!==true);
+	ns.s('session', function(key, value){
+		if(value===undefined){
+			return ns.c('sessionGet', [key]);
+		}
+		else if(value===null){
+			return ns.c('sessionDel', [key]);
+		}
+		else{
+			return ns.c('sessionSet', [key, value]);
+		}
+	}, true);
+	ns.s('sessionId', function(){
+		return getId(ns, config.quiet);
+	}, true);
+	ns.s('sessionDel', function(key){
+		return del(ns, key, config.quiet);
+	}, true);
+	ns.s('sessionGet', function(key){
+		return get(ns, key, config.quiet);
+	}, true);
+	ns.s('sessionSet', function(key, value){
+		return set(ns, key, value, config.quiet);
+	}, true);
+	ns.s('sessionAuto', function(){
+		return beginning(ns, config.quiet);
+	}, true);
+	ns.s('sessionDone', function(){
+		return ending(ns, config.quiet);
+	}, true);
+	return Promise.resolve({session: config.enable===true});
 };
 module.exports.init = init;
 
 
-var get = function (ns) {
-	ns.log('TRACE', 'engine::meta', ['session init']);
-	ns.session = function (key, value) {
-		ns.log('DEBUG', 'engine::meta', ['call session', key, value]);
-		let k = key || '';
-		let v = value;
-		let result;
-		if (key===undefined) {
-			result = ns.SESSION_DATA;
-		}
-		else if (v===null) {
-			delete ns.SESSION_DATA[k];
-		}
-		else if (v!==undefined) {
-			ns.SESSION_DATA[k] = v;
-		}
-		else if (k in ns.SESSION_DATA) {
-			result = ns.SESSION_DATA[k];
-		}
-		ns.log('DEBUG', 'engine::meta', ['called session', result]);
+var auto = function(ns, config){
+	let result = Promise.resolve({session: config.enable===true}), resolve = function(){
 		return result;
 	};
-	Object.freeze(ns.session);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-session.auto', []);
+	return (config.enable===true && config.auto===true) ? ns.c('sessionAuto').then(resolve) : result;
 };
-module.exports.session = get;
+module.exports.auto = auto;
 
 
-var getId = function (ns) {
-	ns.log('TRACE', 'engine::meta', ['sessionId init']);
-	ns.sessionId = function () {
-		ns.log('DEBUG', 'engine::meta', ['call sessionId']);
-		let result = ns.SESSION_ID;
-		ns.log('DEBUG', 'engine::meta', ['called sessionId', result]);
+var done = function(ns, config){
+	let result = Promise.resolve({session: config.enable===true}), resolve = function(){
 		return result;
 	};
-	Object.freeze(ns.sessionId);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-session.done', []);
+	return (config.enable===true && config.done===true) ? ns.c('sessionDone').then(resolve) : result;
 };
-module.exports.sessionId = getId;
-
-
-var done = function (ns) {
-	ns.log('TRACE', 'engine::meta', ['sessionDone init']);
-	let expires = sessionOptionsDefault.expires;
-	ns.sessionDone = function () {
-		let id = ns.SESSION_ID;
-		let data = ns.SESSION_DATA;
-		ns.log('DEBUG', 'engine::meta', ['call sessionDone', id, data, expires]);
-		let result = new Promise(function (resolve, reject) {
-			a.storeDataSetter(id, data, expires).then(resolve, reject);
-		});
-		ns.log('DEBUG', 'engine::meta', ['called sessionDone', result]);
-		return result;
-	};
-	Object.freeze(ns.sessionDone);
-};
-module.exports.sessionDone = done;
-
-
-var start = function (ns) {
-	ns.log('TRACE', 'engine::meta', ['sessionStart init']);
-	let name = sessionOptionsDefault.idName;
-	let length = sessionOptionsDefault.idLength;
-	let expires = sessionOptionsDefault.expires;
-	let sessionIdSet = function (id) {
-		ns.log('DEBUG', 'engine::meta', ['call sessionStart id set', id]);
-		ns.SESSION_ID = id;
-		Object.freeze(ns.SESSION_ID);
-		return id;
-	};
-	let sessionDataSet = function (data) {
-		ns.log('DEBUG', 'engine::meta', ['call sessionStart data set', data]);
-		Object.assign(ns.SESSION_DATA, data);
-		return data;
-	};
-	let sessionCookieSet = function (id, expires) {
-		ns.log('DEBUG', 'engine::meta', ['call sessionStart cookie set', id, expires]);
-		ns.cookie(name, id, { siteOnly: true, expires: expires });
-		return id;
-	};
-	let sessionNew = function () {
-		ns.log('DEBUG', 'engine::meta', ['sessionStart new']);
-		let checker = function (id) {
-			return a.storeIdChecker(id, expires);
-		};
-		return a.generateUniqueId(length, checker)
-			.then(function (id) {
-				ns.log('DEBUG', 'engine::meta', ['called sessionStart new generateUniqueId', id]);
-				return id;
-			})
-			.then(sessionCookieSet)
-			.then(sessionIdSet);
-	};
-	let sessionRenew = function (id) {
-		/*
-		 // sessionStart with wrong sessionId in cookie
-		 sessionCookieSet('', -1);
-		 sessionIdSet(false);
-		 */
-		ns.log('DEBUG', 'engine::meta', ['sessionStart renew', id]);
-		return Promise.resolve(id)
-			.then(sessionCookieSet)
-			.then(sessionIdSet);
-	};
-	let sessionDataGet = function (id) {
-		ns.log('DEBUG', 'engine::meta', ['sessionStart get data', id]);
-		return a.storeDataGetter(id, expires)
-			.then(function (data) {
-				sessionIdSet(id);
-				sessionDataSet(data);
-				return id;
-			})
-			.catch(function (error) {
-				sessionCookieSet('', -1);
-				sessionIdSet(false);
-				return 'sessionStart getting data';
-			});
-	};
-	ns.sessionStart = function () {
-		let id = ns.SESSION_ID;
-		let data = ns.SESSION_DATA;
-		ns.log('TRACE', 'engine::meta', ['call sessionStart']);
-		return Promise.resolve(id)
-			.then(function (id) {
-				console.log(1);
-				if (id) {
-					ns.log('DEBUG', 'engine::meta', ['sessionStart twice', id]);
-					return id;
-				}
-				else {
-					return false;
-				}
-			})
-			.then(function (id) {
-				console.log(2);
-				if (id) {
-					return id;
-				}
-				else {
-					id = ns.cookie(name);
-					if (id) {
-						ns.log('DEBUG', 'engine::meta', ['sessionStart from cookie', id]);
-						return a.storeIdChecker(id, expires)
-							.then(function (r) {
-								if (r.exists) {
-									ns.log('DEBUG', 'engine::meta', ['sessionStart from cookie', id]);
-									return sessionDataGet(r.id);
-								}
-								else {
-									ns.log('DEBUG', 'engine::meta', ['sessionStart from cookie renew', id]);
-									return sessionRenew(r.id);
-								}
-							});
-					}
-					else {
-						return false;
-					}
-				}
-			})
-			.then(function (id) {
-				console.log(3);
-				if (id) {
-					return id;
-				}
-				else {
-					return sessionNew(name, length, expires);
-				}
-			});
-	};
-	Object.freeze(ns.sessionStart);
-};
-module.exports.sessionStart = start;
-
-
-var auto = function (ns, config) {
-	ns.log('TRACE', 'engine::meta', ['sessionAuto init']);
-	ns.sessionAuto = function (options) {
-		ns.log('TRACE', 'engine::meta', ['call sessionAuto']);
-		options = Object.assign({}, config, options);
-		return options.enable===true ? ns.sessionStart() : Promise.resolve(false);
-	};
-	Object.freeze(ns.sessionAuto);
-};
-module.exports.sessionAuto = auto;
+module.exports.done = done;
 

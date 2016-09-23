@@ -2,75 +2,66 @@
 
 
 var config = require('./config');
+var uf = require('util').format;
 
 
-var binds = [
-	[require('./bind/accept'), 'accept'],
-	[require('./bind/acceptEncoding'), 'acceptEncoding'],
-	[require('./bind/acceptLanguage'), 'acceptLanguage'],
-	[require('./bind/contentType'), 'contentType'],
-	[require('./bind/cookie'), 'cookie'],
-	[require('./bind/host'), 'host'],
-	[require('./bind/method'), 'method'],
-	[require('./bind/path'), 'path'],
-	[require('./bind/port'), 'port'],
-	[require('./bind/session'), 'session'],
-	[require('./bind/statusCode'), 'statusCode'],
-	[require('./bind/statusMessage'), 'statusMessage'],
-	[require('./bind/userAgent'), 'userAgent']
-];
-
-
-var bindMap = function(property){
+var bindsFilter = function(bind){
+	return bind && bind.enable===true;
+};
+var bindsMap = function(bind){
+	return [require(bind.path), bind.name];
+};
+var binds = config.binds.filter(bindsFilter).map(bindsMap);
+var bindMap = function(ns, property){
 	return function(bind){
-		return bind[0][property](ns, config[bind[1]]);
+		let bindRequire = bind[0], bindName = bind[1];
+		return bindRequire[property](ns, config[bindName]);
 	}
 };
-var bindSuccess = function(bind){
+var bindSuccess = function(ns, property){
 	return function(result){
-		ns.log('TRACE', 'engine::meta '+bind+' success', [result]);
+		ns.log('TRACE', uf('engine.meta.%s', property), ['success'].concat(result));
 		return result;
 	}
 };
-var bindUnsuccess = function(bind){
+var bindUnsuccess = function(ns, property){
 	return function(error){
-		let msg = 'engine::meta '+bind+' unsuccess';
-		ns.log('ERROR', msg, [error]);
-		return msg+': '+error;
+		let msg = uf('engine.meta.%s', property);
+		ns.log('ERROR', msg, ['unsuccess', error]);
+		return uf('%s unsuccess: %j', msg, error);
 	}
 };
 
 
 var init = function(ns){
-	ns.log('TRACE', 'engine::meta', ['init']);
-	let map = bindMap('init');
-	let success = bindSuccess('init');
-	let unseccess = bindUnsuccess('init');
-	return Promise.all(binds.map(map)).then(success, unseccess);
+	ns.log('TRACE', 'engine.meta.init', []);
+	let map = bindMap(ns, 'init');
+	let success = bindSuccess(ns, 'init');
+	let unsuccess = bindUnsuccess(ns, 'init');
+	let promises = binds.map(map);
+	return Promise.all(promises).then(success, unsuccess);
 };
 module.exports.init = init;
 
 
 var auto = function(ns){
-	ns.log('TRACE', 'engine::meta', ['auto']);
-	let map = bindMap('auto');
-	let success = bindSuccess('auto');
-	let unseccess = bindUnsuccess('auto');
-	return Promise.all(binds.map(map)).then(success, unseccess);
+	ns.log('TRACE', 'engine.meta.auto', []);
+	let map = bindMap(ns, 'auto');
+	let success = bindSuccess(ns, 'auto');
+	let unsuccess = bindUnsuccess(ns, 'auto');
+	let promises = binds.map(map);
+	return Promise.all(promises).then(success, unsuccess);
 };
 module.exports.auto = auto;
 
 
 var done = function(ns){
-	// ???
-	// ns.sessionDone();
-	// ns.cookieSetSend();
-	//
-	ns.log('TRACE', 'engine::meta', ['done']);
-	let map = bindMap('done');
-	let success = bindSuccess('done');
-	let unseccess = bindUnsuccess('done');
-	return Promise.all(binds.map(map)).then(success, unseccess);
+	ns.log('TRACE', 'engine.meta.done', []);
+	let map = bindMap(ns, 'done');
+	let success = bindSuccess(ns, 'done');
+	let unsuccess = bindUnsuccess(ns, 'done');
+	let promises = binds.map(map);
+	return Promise.all(promises).then(success, unsuccess);
 };
-module.exports.init = done;
+module.exports.done = done;
 

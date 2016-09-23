@@ -1,120 +1,105 @@
 'use strict';
 
 
+var a = require('../lib/actions');
+var type = require('zanner-typeof'), of = type.of;
+
+
 // userAgent
 //
 // https://developer.mozilla.org/en-US/docs/Browser_detection_using_the_user_agent
 //
-
-
-var type = require('zanner-typeof'), of = type.of;
+var userAgent2Browser = function(value){
+	let CFG = [
+		{name: 'firefox', like: [/Firefox[\/][\.\d]+/i], unlike: [/Seamonkey[\/][\.\d]+/i]},
+		{name: 'seamonkey', like: [/Seamonkey[\/][\.\d]+/i]},
+		{name: 'chrome', like: [/Chrome[\/][\.\d]+/i], unlike: [/Chromium[\/][\.\d]+/i]},
+		{name: 'chromium', like: [/Chromium[\/][\.\d]+/i]},
+		{name: 'safari', like: [/Safari[\/][\.\d]+/i], unlike: [/(?:Chrome|Chromium)[\/][\.\d]+/i]},
+		{name: 'opera', like: [/(?:Opera|OPR)[\/][\.\d]+/i]},
+		{name: 'ie', like: [/[\;]MSIE[\s]*[\.\d]+[\;]/i]},
+		{name: 'unknown'}
+	];
+	let check = function(value, RE, unlike){
+		let someCheck = function(re, index){
+			let result = of(re, 'regexp') ? re.test(value) : undefined;
+			return result===undefined ? false : unlike ? result : !result;
+		};
+		return of(RE, 'array') ? !RE.some(someCheck) : true;
+	};
+	let result = CFG.find(function(cfg, index){
+		return check(value, cfg.like, false) && check(value, cfg.unlike, true);
+	});
+	return result.name;
+};
+var get = function(ns, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-userAgent.get', ['call']);
+	let result = ns.g('USER_AGENT');
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-userAgent.get', ['called', result]);
+	return result;
+};
+var equal = function(ns, ua, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-userAgent.equal', ['call', ua]);
+	let result = get(ns, true)===ua;
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-userAgent.equal', ['called', result]);
+	return result;
+};
+var like = function(ns, ua, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-userAgent.like', ['call', ua]);
+	let result = false;
+	if(of(ua, 'array')){
+		result = ua.some(function(item, index){
+			return like(ns, item, true);
+		});
+	}
+	else if(of(ua, 'regexp')){
+		result = ua.test(get(ns, true));
+	}
+	else{
+		result = equal(ns, ua, true);
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-userAgent.like', ['called', result]);
+	return result;
+};
+var browser = function(ns, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-userAgent.browser', ['call']);
+	let result = ns.g('BROWSER');
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-userAgent.browser', ['called', result]);
+	return result;
+};
 
 
 var init = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['userAgent init']);
-	ns.USER_AGENT_STRING = '';
-	let value = '';
-	if(config.enable===true){
-		let key = 'user-agent';
-		value = ns.request.headers[key] || value;
-		ns.USER_AGENT_STRING = value;
-		switch(config.case){
-			case 'lower':
-				value = value.toLowerCase();
-				break;
-			case 'upper':
-				value = value.toUpperCase();
-				break;
-		}
-		if(value.match(/Firefox[\/][\.\d]+/i) && !value.match(/Seamonkey[\/][\.\d]+/i)){
-			value = 'firefox';
-		}
-		else if(value.match(/Seamonkey[\/][\.\d]+/i)){
-			value = 'seamonkey';
-		}
-		else if(value.match(/Chrome[\/][\.\d]+/i) && !value.match(/Chromium[\/][\.\d]+/i)){
-			value = 'chrome';
-		}
-		else if(value.match(/Chromium[\/][\.\d]+/i)){
-			value = 'chromium';
-		}
-		else if(value.match(/Safari[\/][\.\d]+/i) && !value.match(/(?:Chrome|Chromium)[\/][\.\d]+/i)){
-			value = 'safari';
-		}
-		else if(value.match(/(?:Opera|OPR)[\/][\.\d]+/i)){
-			value = 'opera';
-		}
-		else if(value.match(/[\;]MSIE[\s]*[\.\d]+[\;]/i)){
-			value = 'ie';
-		}
-		else{
-			value = 'unknown';
-		}
-	}
-	ns.USER_AGENT = value;
-	Object.freeze(ns.USER_AGENT);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-userAgent.init', []);
+	ns.s('USER_AGENT', a.value2case(config, ns.request.headers['user-agent'], ''), true);
+	ns.s('BROWSER', userAgent2Browser(ns.USER_AGENT), true);
+	ns.s('userAgent', function(){
+		return get(ns, config.quiet);
+	}, true);
+	ns.s('userAgentEqual', function(ua){
+		return equal(ns, ua, config.quiet);
+	}, true);
+	ns.s('userAgentLike', function(ua){
+		return like(ns, ua, config.quiet);
+	}, true);
+	ns.s('browser', function(ua){
+		return browser(ns, config.quiet);
+	}, true);
+	return Promise.resolve({userAgent: config.enable===true});
 };
 module.exports.init = init;
 
 
-var get = function(ns){
-	ns.log('TRACE', 'engine::meta', ['userAgent init']);
-	ns.userAgent = function(){
-		ns.log('DEBUG', 'engine::meta', ['call userAgent']);
-		let result = ns.USER_AGENT;
-		ns.log('DEBUG', 'engine::meta', ['called userAgent', result]);
-		return result;
-	};
-	Object.freeze(ns.userAgent);
-};
-module.exports.userAgent = get;
-
-
-var equal = function(ns){
-	ns.log('TRACE', 'engine::meta', ['userAgentEqual init']);
-	ns.userAgentEqual = function(ua){
-		ns.log('DEBUG', 'engine::meta', ['call userAgentEqual', ua]);
-		let result = ns.USER_AGENT===ua;
-		ns.log('DEBUG', 'engine::meta', ['called userAgentEqual', result]);
-		return result;
-	};
-	Object.freeze(ns.userAgentEqual);
-};
-module.exports.userAgentEqual = equal;
-
-
-var like = function(ns){
-	ns.log('TRACE', 'engine::meta', ['userAgentLike init']);
-	ns.userAgentLike = function(ua){
-		ns.log('DEBUG', 'engine::meta', ['call userAgentLike', ua]);
-		let result = false;
-		if(of(ua, 'array')){
-			result = ua.some(function(item, index){
-				return ns.userAgentLike(item);
-			});
-		}
-		else if(of(ua, 'regex')){
-			result = ua.test(ns.USER_AGENT);
-		}
-		else{
-			result = ns.userAgentEqual(ua);
-		}
-		ns.log('DEBUG', 'engine::meta', ['called userAgentLike', result]);
-		return result;
-	};
-	Object.freeze(ns.userAgentLike);
-};
-module.exports.userAgentLike = like;
-
-
 var auto = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['userAgentAuto init']);
-	ns.userAgentAuto = function(options){
-		ns.log('TRACE', 'engine::meta', ['call userAgentAuto']);
-		options = Object.assign({}, config, options);
-		return Promise.resolve(options.enable===true);
-	};
-	Object.freeze(ns.userAgentAuto);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-userAgent.auto', []);
+	return Promise.resolve({userAgent: config.enable===true});
 };
-module.exports.userAgentAuto = auto;
+module.exports.auto = auto;
+
+
+var done = function(ns, config){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-userAgent.done', []);
+	return Promise.resolve({userAgent: config.enable===true});
+};
+module.exports.done = done;
 

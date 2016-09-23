@@ -1,86 +1,80 @@
 'use strict';
 
 
+var a = require('../lib/actions');
 var type = require('zanner-typeof'), of = type.of;
 
 
-var init = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['statusCode init']);
-	let value = 0;
-	if(config.enable===true){
-		let key = 'statusCode';
-		value = ns.request[key] || value;
+var get = function(ns, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusCode.get', ['call']);
+	let result = ns.g('STATUS_CODE');
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusCode.get', ['called', result]);
+	return result;
+};
+var equal = function(ns, sc, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusCode.equal', ['call', sc]);
+	let result = false;
+	if(of(sc, 'number')){
+		result = get(ns, true)===sc;
 	}
-	ns.STATUS_CODE = value;
-	Object.freeze(ns.STATUS_CODE);
+	else if(of(sc, 'string')){
+		result = get(ns, true)==sc;
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusCode.equal', ['called', result]);
+	return result;
+};
+var like = function(ns, sc, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusCode.like', ['call', sc]);
+	let result = false;
+	if(of(sc, 'array')){
+		result = sc.some(function(item, index){
+			return like(ns, item, true);
+		});
+	}
+	else if(of(sc, 'regexp')){
+		result = sc.test(get(ns, true));
+	}
+	else{
+		result = equal(ns, sc, true);
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusCode.like', ['called', result]);
+	return result;
+};
+
+
+var init = function(ns, config){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-statusCode.init', []);
+	if(config.enable===true){
+		let code = ns.request['statusCode'] || 0;
+		ns.s('STATUS_CODE', code, true);
+	}
+	else{
+		ns.s('STATUS_CODE', 0, true);
+	}
+	ns.s('statusCode', function(){
+		return get(ns, config.quiet);
+	}, true);
+	ns.s('statusCodeEqual', function(sc){
+		return equal(ns, sc, config.quiet);
+	}, true);
+	ns.s('statusCodeLike', function(sc){
+		return like(ns, sc, config.quiet);
+	}, true);
+	return Promise.resolve({statusCode: config.enable===true});
 };
 module.exports.init = init;
 
 
-var get = function(ns){
-	ns.log('TRACE', 'engine::meta', ['statusCode init']);
-	ns.statusCode = function(){
-		ns.log('DEBUG', 'engine::meta', ['call statusCode']);
-		let result = ns.STATUS_CODE;
-		ns.log('DEBUG', 'engine::meta', ['called statusCode', result]);
-		return result;
-	};
-	Object.freeze(ns.statusCode);
-};
-module.exports.statusCode = get;
-
-
-var equal = function(ns){
-	ns.log('TRACE', 'engine::meta', ['statusCodeEqual init']);
-	ns.statusCodeEqual = function(sc){
-		ns.log('DEBUG', 'engine::meta', ['call statusCodeEqual', sc]);
-		let result = false;
-		if(of(sc, 'number')){
-			result = ns.STATUS_CODE===sc;
-		}
-		else if(of(sc, 'string')){
-			result = ns.STATUS_CODE==sc;
-		}
-		ns.log('DEBUG', 'engine::meta', ['called statusCodeEqual', result]);
-		return result;
-	};
-	Object.freeze(ns.statusCodeEqual);
-};
-module.exports.statusCodeEqual = equal;
-
-
-var like = function(ns){
-	ns.log('TRACE', 'engine::meta', ['statusCodeLike init']);
-	ns.statusCodeLike = function(sc){
-		ns.log('DEBUG', 'engine::meta', ['call statusCodeLike', sc]);
-		let result = false;
-		if(of(sc, 'array')){
-			result = sc.some(function(item, index){
-				return ns.statusCodeLike(item);
-			});
-		}
-		else if(of(sc, 'regex')){
-			result = sc.test(ns.STATUS_CODE);
-		}
-		else{
-			result = ns.statusCodeEqual(sc);
-		}
-		ns.log('DEBUG', 'engine::meta', ['called statusCodeLike', result]);
-		return result;
-	};
-	Object.freeze(ns.statusCodeLike);
-};
-module.exports.statusCodeLike = like;
-
-
 var auto = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['statusCodeAuto init']);
-	ns.statusCodeAuto = function(options){
-		ns.log('TRACE', 'engine::meta', ['call statusCodeAuto']);
-		options = Object.assign({}, config, options);
-		return Promise.resolve(options.enable===true);
-	};
-	Object.freeze(ns.statusCodeAuto);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-statusCode.auto', []);
+	return Promise.resolve({statusCode: config.enable===true});
 };
-module.exports.statusCodeAuto = auto;
+module.exports.auto = auto;
+
+
+var done = function(ns, config){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-statusCode.done', []);
+	return Promise.resolve({statusCode: config.enable===true});
+};
+module.exports.done = done;
 

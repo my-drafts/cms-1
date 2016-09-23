@@ -1,8 +1,8 @@
 'use strict';
 
 
-var a = require('./../lib/actions');
-var get_form_urlencoded = require('./../lib/get/form_urlencoded');
+var a = require('../lib/actions');
+var get_form_urlencoded = require('../lib/get/form_urlencoded');
 
 
 // get
@@ -14,21 +14,21 @@ var get_form_urlencoded = require('./../lib/get/form_urlencoded');
 // }
 //
 var getKeys = function(ns, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::get', ['call gets']);
-	let result = a.akeys(ns.GET);
-	quiet ? 0 : ns.log('DEBUG', 'engine::get', ['called gets', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.get.getKeys', ['call']);
+	let result = a.akeys(ns.g('GET'));
+	quiet ? 0 : ns.log('DEBUG', 'engine.get.getKeys', ['called', result]);
 	return result;
 };
 var getAmount = function(ns, name, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::get', ['call getAmount', name]);
-	let result = a.alength(ns.GET, name);
-	quiet ? 0 : ns.log('DEBUG', 'engine::get', ['called getAmount', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.get.getAmount', ['call', name]);
+	let result = a.alength(ns.g('GET'), name);
+	quiet ? 0 : ns.log('DEBUG', 'engine.get.getAmount', ['called', result]);
 	return result;
 };
 var get = function(ns, name, index, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::get', ['call get', name, index]);
-	let result = a.aitem(ns.GET, name, index);
-	quiet ? 0 : ns.log('DEBUG', 'engine::get', ['called get', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.get.get', ['call', name, index]);
+	let result = a.aitem(ns.g('GET'), name, index);
+	quiet ? 0 : ns.log('DEBUG', 'engine.get.get', ['called', result]);
 	return result;
 };
 var getObjectsWalk = function(item, index, field){
@@ -39,32 +39,28 @@ var getObjectsWalk = function(item, index, field){
 	};
 };
 var getObjects = function(ns, quiet){
-	quiet ? 0 : ns.log('DEBUG', 'engine::get', ['call getObjects']);
-	let result = a.awalk(ns.GET, getObjectsWalk);
-	quiet ? 0 : ns.log('DEBUG', 'engine::get', ['called getObjects', result]);
+	quiet ? 0 : ns.log('DEBUG', 'engine.get.getObjects', ['call']);
+	let result = a.awalk(ns.g('GET'), getObjectsWalk);
+	quiet ? 0 : ns.log('DEBUG', 'engine.get.getObjects', ['called', result]);
 	return result;
 };
 
 
 var init = function(ns, config){
-	ns.log('TRACE', 'engine::get', ['init']);
-	ns.GET = {};
-	ns.getKeys = function(){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.get.init', []);
+	ns.s('GET', {}, false);
+	ns.s('getKeys', function(){
 		return getKeys(ns, config.quiet);
-	};
-	ns.getAmount = function(name){
+	}, true);
+	ns.s('getAmount', function(name){
 		return getAmount(ns, name, config.quiet);
-	};
-	ns.get = function(name, index){
+	}, true);
+	ns.s('get', function(name, index){
 		return get(ns, name, index, config.quiet);
-	};
-	ns.getObjects = function(){
+	}, true);
+	ns.s('getObjects', function(){
 		return getObjects(ns, config.quiet);
-	};
-	Object.freeze(ns.gets);
-	Object.freeze(ns.getAmount);
-	Object.freeze(ns.get);
-	Object.freeze(ns.getObjects);
+	}, true);
 	return Promise.resolve({get: config.enable===true});
 };
 module.exports.init = init;
@@ -77,31 +73,31 @@ var autoLoading = function(ns, config){
 	};
 };
 var auto = function(ns, config){
-	config.quiet ? 0 : ns.log('TRACE', 'engine::get', ['auto']);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.get.auto', []);
 	let loaded = undefined;
 	let al = autoLoading(ns, config);
 	let loading = al.loading, loadingOptions = al.loadingOptions;
 	if(config.enable!==true){
-		config.quiet ? 0 : ns.log('DEBUG', 'engine::get', ['auto disabled']);
+		config.quiet ? 0 : ns.log('DEBUG', 'engine.get.auto', ['disabled']);
 		return Promise.resolve({get: false});
 	}
 	else if(loaded){
-		config.quiet ? 0 : ns.log('DEBUG', 'engine::get', ['auto from loaded', loaded]);
+		config.quiet ? 0 : ns.log('DEBUG', 'engine.get.auto', ['from loaded', loaded]);
 		return Promise.resolve({get: loaded>0});
 	}
 	else{
-		config.quiet ? 0 : ns.log('DEBUG', 'engine::get', ['auto enable']);
+		config.quiet ? 0 : ns.log('DEBUG', 'engine.get.auto', ['enable']);
 		let options = Object.assign({}, config['*/*'], loadingOptions);
 		return loading(ns, options)
 			.then(function(result){
-				config.quiet ? 0 : ns.log('DEBUG', 'engine::get', ['auto successes']);
-				Object.freeze(ns.GET);
+				config.quiet ? 0 : ns.log('DEBUG', 'engine.get.auto', ['successes']);
+				ns.f('GET');
 				loaded = 1;
 				return {get: true};
 			})
 			.catch(function(error){
-				config.quiet ? 0 : ns.log('ERROR', 'engine::get', ['auto unsuccesses', error]);
-				Object.freeze(ns.GET);
+				config.quiet ? 0 : ns.log('ERROR', 'engine.get.auto', ['unsuccesses', error]);
+				ns.f('GET');
 				loaded = -1;
 				return error;
 			});
@@ -111,7 +107,7 @@ module.exports.auto = auto;
 
 
 var done = function(ns, config){
-	config.quiet ? 0 : ns.log('TRACE', 'engine::get', ['done']);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.get.done', []);
 	return Promise.resolve({get: config.enable===true});
 };
 module.exports.done = done;

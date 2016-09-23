@@ -1,88 +1,68 @@
 'use strict';
 
 
+var a = require('../lib/actions');
 var type = require('zanner-typeof'), of = type.of;
 
 
-var init = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['statusMessage init']);
-	let value = '';
-	if(config.enable===true){
-		let key = 'statusMessage';
-		value = ns.request[key] || value;
-		switch(config.case){
-			case 'lower':
-				value = value.toLowerCase();
-				break;
-			case 'upper':
-				value = value.toUpperCase();
-				break;
-		}
+var get = function(ns, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusMessage.get', ['call']);
+	let result = ns.g('STATUS_MESSAGE');
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusMessage.get', ['called', result]);
+	return result;
+};
+var equal = function(ns, sm, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusMessage.equal', ['call', sm]);
+	let result = get(ns, true)===sm;
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusMessage.equal', ['called', result]);
+	return result;
+};
+var like = function(ns, sm, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusMessage.like', ['call', sm]);
+	let result = false;
+	if(of(sm, 'array')){
+		result = sm.some(function(item, index){
+			return like(ns, item, true);
+		});
 	}
-	ns.STATUS_MESSAGE = value;
-	Object.freeze(ns.STATUS_MESSAGE);
+	else if(of(sm, 'regexp')){
+		result = sm.test(get(ns, true));
+	}
+	else{
+		result = equal(ns, sm, true);
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-statusMessage.like', ['called', result]);
+	return result;
+};
+
+
+var init = function(ns, config){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-statusMessage.init', []);
+	ns.s('STATUS_MESSAGE', a.value2case(config, ns.request['statusMessage'], ''), true);
+	ns.s('statusMessage', function(){
+		return get(ns, config.quiet);
+	}, true);
+	ns.s('statusMessageEqual', function(sm){
+		return equal(ns, sm, config.quiet);
+	}, true);
+	ns.s('statusMessageLike', function(sm){
+		return like(ns, sm, config.quiet);
+	}, true);
+	return Promise.resolve({statusMessage: config.enable===true});
 };
 module.exports.init = init;
 
 
-var get = function(ns){
-	ns.log('TRACE', 'engine::meta', ['statusMessage init']);
-	ns.statusMessage = function(){
-		ns.log('DEBUG', 'engine::meta', ['call statusMessage']);
-		let result = ns.STATUS_MESSAGE;
-		ns.log('DEBUG', 'engine::meta', ['called statusMessage', result]);
-		return result;
-	};
-	Object.freeze(ns.statusMessage);
-};
-module.exports.statusMessage = get;
-
-
-var equal = function(ns){
-	ns.log('TRACE', 'engine::meta', ['statusMessageEqual init']);
-	ns.statusMessageEqual = function(sm){
-		ns.log('DEBUG', 'engine::meta', ['call statusMessageEqual', sm]);
-		let result = ns.STATUS_MESSAGE===sm;
-		ns.log('DEBUG', 'engine::meta', ['called statusMessageEqual', result]);
-		return result;
-	};
-	Object.freeze(ns.statusMessageEqual);
-};
-module.exports.statusMessageEqual = equal;
-
-
-var like = function(ns){
-	ns.log('TRACE', 'engine::meta', ['statusMessageLike init']);
-	ns.statusMessageLike = function(sm){
-		ns.log('DEBUG', 'engine::meta', ['call statusMessageLike', sm]);
-		let result = false;
-		if(of(sm, 'array')){
-			result = sm.some(function(item, index){
-				return ns.statusMessageLike(item);
-			});
-		}
-		else if(of(sm, 'regex')){
-			result = sm.test(ns.STATUS_MESSAGE);
-		}
-		else{
-			result = ns.statusMessageEqual(sm);
-		}
-		ns.log('DEBUG', 'engine::meta', ['called statusMessageLike', result]);
-		return result;
-	};
-	Object.freeze(ns.statusMessageLike);
-};
-module.exports.statusMessageLike = like;
-
-
 var auto = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['statusMessageAuto init']);
-	ns.statusMessageAuto = function(options){
-		ns.log('TRACE', 'engine::meta', ['call statusMessageAuto']);
-		options = Object.assign({}, config, options);
-		return Promise.resolve(options.enable===true);
-	};
-	Object.freeze(ns.statusMessageAuto);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-statusMessage.auto', []);
+	return Promise.resolve({statusMessage: config.enable===true});
 };
-module.exports.statusMessageAuto = auto;
+module.exports.auto = auto;
+
+
+var done = function(ns, config){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-statusMessage.done', []);
+	return Promise.resolve({statusMessage: config.enable===true});
+};
+module.exports.done = done;
 

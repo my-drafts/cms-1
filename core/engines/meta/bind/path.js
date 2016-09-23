@@ -1,102 +1,90 @@
 'use strict';
 
 
-// path
-//
-// [ 'dir1', ... ]
-//
-
-
+var a = require('../lib/actions');
 var url = require('url');
 var type = require('zanner-typeof'), of = type.of;
 
 
+// path
+//
+// [ 'dir1', ... ]
+//
+var pathJoin = function(path, first){
+	return (first ? '/' : '') + path.join('/');
+};
+var get = function(ns, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-path.get', ['call']);
+	let result = pathJoin(ns.g('PATH'), true);
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-path.get', ['called', result]);
+	return result;
+};
+var equal = function(ns, p, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-path.equal', ['call', p]);
+	let result = false;
+	if(of(p, 'array')){
+		result = get(ns, true)===pathJoin(p, true);
+	}
+	else if(of(p, 'string')){
+		result = equal(ns, p.replace(/^[\/]?(.*?)[\/]?$/, '$1').split('/'), true);
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-path.equal', ['called', result]);
+	return result;
+};
+var like = function(ns, p, quiet){
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-path.like', ['call', p]);
+	let result = false;
+	if(of(p, 'array')){
+		result = like(ns, pathJoin(p.sort(), true), true);
+	}
+	else if(of(p, 'regexp')){
+		result = p.test(get(ns, true));
+	}
+	else if(of(p, 'string')){
+		result = pathJoin(ns.g('PATH').sort(), true)===pathJoin(p.replace(/^[\/]?(.*?)[\/]?$/, '$1').split('/').sort(), true);
+	}
+	quiet ? 0 : ns.log('DEBUG', 'engine.meta-path.like', ['called', result]);
+	return result;
+};
+
+
 var init = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['path init']);
-	let value = [];
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-path.init', []);
 	if(config.enable===true){
 		let RE = /^[\/]?(.*?)[\/]?$/;
-		let key = 'url';
-		value = ns.request[key] || '';
-		switch(config.case){
-			case 'lower':
-				value = value.toLowerCase();
-				break;
-			case 'upper':
-				value = value.toUpperCase();
-				break;
-		}
-		value = url.parse(value, true).pathname;
-		value = value.replace(RE, '$1');
-		value = value.split('/');
+		let path = a.value2case(config, ns.request['url'], '');
+		path = url.parse(path, true).pathname;
+		path = path.replace(RE, '$1');
+		path = path.split('/');
+		ns.s('PATH', path, true);
 	}
-	ns.PATH = value;
-	Object.freeze(ns.PATH);
+	else{
+		ns.s('PATH', [], true);
+	}
+	ns.s('path', function(){
+		return get(ns, config.quiet);
+	}, true);
+	ns.s('pathEqual', function(p){
+		return equal(ns, p, config.quiet);
+	}, true);
+	ns.s('pathLike', function(p){
+		return like(ns, p, config.quiet);
+	}, true);
+	return Promise.resolve({path: config.enable===true});
 };
 module.exports.init = init;
 
 
-var get = function(ns){
-	ns.log('TRACE', 'engine::meta', ['path init']);
-	ns.path = function(){
-		ns.log('DEBUG', 'engine::meta', ['call path']);
-		let result = '/'+ns.PATH.join('/');
-		ns.log('DEBUG', 'engine::meta', ['called path', result]);
-		return result;
-	};
-	Object.freeze(ns.path);
-};
-module.exports.path = get;
-
-
-var equal = function(ns){
-	ns.log('TRACE', 'engine::meta', ['pathEqual init']);
-	ns.pathEqual = function(p){
-		ns.log('DEBUG', 'engine::meta', ['call pathEqual', p]);
-		let result = false;
-		if(of(p, 'string')){
-			result = ns.PATH.join('/')===p.replace(/^[\/]?(.*?)[\/]?$/, '$1');
-		}
-		else if(of(p, 'array')){
-			result = ns.pathEqual(p.join('/'));
-		}
-		ns.log('DEBUG', 'engine::meta', ['called pathEqual', result]);
-		return result;
-	};
-	Object.freeze(ns.pathEqual);
-};
-module.exports.pathEqual = equal;
-
-
-var like = function(ns){
-	ns.log('TRACE', 'engine::meta', ['pathLike init']);
-	ns.pathLike = function(p){
-		ns.log('DEBUG', 'engine::meta', ['call pathLike', p]);
-		let result = false;
-		if(of(p, 'array')){
-			result = ns.pathLike(p.sort().join('/'));
-		}
-		else if(of(p, 'regex')){
-			result = p.test(ns.PATH.join('/'));
-		}
-		else if(of(p, 'string')){
-			result = ns.PATH.sort().join('/')===p.replace(/^[\/]?(.*?)[\/]?$/, '$1').split('/').sort().join('/');
-		}
-		ns.log('DEBUG', 'engine::meta', ['called pathLike', result]);
-		return result;
-	};
-	Object.freeze(ns.pathLike);
-};
-module.exports.pathLike = like;
-
-
 var auto = function(ns, config){
-	ns.log('TRACE', 'engine::meta', ['pathAuto init']);
-	ns.pathAuto = function(options){
-		ns.log('TRACE', 'engine::meta', ['call pathAuto']);
-		options = Object.assign({}, config, options);
-		return Promise.resolve(options.enable===true);
-	};
-	Object.freeze(ns.pathAuto);
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-path.auto', []);
+	return Promise.resolve({path: config.enable===true});
 };
-module.exports.pathAuto = auto;
+module.exports.auto = auto;
+
+
+var done = function(ns, config){
+	config.quiet ? 0 : ns.log('TRACE', 'engine.meta-path.done', []);
+	return Promise.resolve({path: config.enable===true});
+};
+module.exports.done = done;
+

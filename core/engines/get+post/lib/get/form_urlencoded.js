@@ -34,7 +34,7 @@ var action = function(ns, options){
 		return true;
 	};
 	let unsuccess = function(error){
-		return 'form-urlencoded GET: ' + error;
+		return 'form-urlencoded GET: '+error;
 	};
 	let o = Object.assign({}, optionsDefault, a.options4map(optionsMap, options));
 	return o.enable!==true ? Promise.resolve(false) : a.data2parse(ns.request.url, parser, o).then(success, unsuccess);
