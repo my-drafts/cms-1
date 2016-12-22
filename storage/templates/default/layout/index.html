@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+	{%- block index_head -%}{%- endblock -%}
+	<title>{{ head_title|default('title') }}</title>
+	<meta charset="utf-8" />
+</head>
+<body>
+	<header>
+		{%- block index_header -%}
+			{% include "./index-header.html" ignore missing %}
+		{%- endblock -%}
+	</header>
+	{%- block index_body -%}{%- endblock -%}
+	<footer>
+		{%- block index_footer -%}
+			{% include "./index-footer.html" ignore missing %}
+		{%- endblock -%}
+	</footer>
+</body>
+</html>
