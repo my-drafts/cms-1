@@ -18,13 +18,13 @@
   },
   "devDependencies": {},
   "scripts": {
-		"debug": "export DEBUG=* ; npm start",
+		"debug": "export DEBUG=* ; npm start; echo \"debug done.\"",
     "log": "git log | head -5 | tail -1 | awk '{print $1}'",
-    "pull": "git pull",
-    "push": "git log | head -5 | tail -1 | awk '{print $1}'; read -p \"version: \" -e gitcommit; git commit -a -m \"$gitcommit\"; git push",
-    "start": "node $(pwd)",
-    "stop": "kill -TERM $(ps -ax | grep $(pwd) | head -1 | awk '{print $1}')",
-    "test": "node ../cms-1/test"
+    "pull": "git stash; git pull; echo \"pull done.\"",
+    "push": "git log | head -5 | tail -1 | awk '{print $1}'; read -p \"version: \" -e gitcommit; git commit -a -m \"$gitcommit\"; git push; echo \"push done.\"",
+    "start": "node $(pwd); echo \"start done.\"",
+    "stop": "kill -KILL $(ps -ax | grep $(pwd) | head -1 | awk '{print $1}'); echo \"stop done.\"",
+    "test": "node ../cms-1/test; echo \"test done.\""
   },
   "author": "Sergey Kukharyev",
   "license": "ISC"
