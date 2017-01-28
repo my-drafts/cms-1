@@ -18,6 +18,7 @@
   },
   "devDependencies": {},
   "scripts": {
+		"debug": "export DEBUG=* ; npm start",
     "log": "git log | head -5 | tail -1 | awk '{print $1}'",
     "pull": "git pull",
     "push": "git push",

@@ -2,6 +2,7 @@
 	"app": {
 		"core": {
 			"amount": 3,
+			"perCPU": 2,
 			"child-0": {
 				
 			},
