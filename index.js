@@ -1,10 +1,11 @@
 'use strict';
 
+const Config = require('./lib/Config');
 const config = require('./config.json');
-const App = require('./lib/app');
-const Cfg = require('./lib/config');
+const cfg = new Config();
+cfg.blocks = config;
 
-const cfg = Cfg(config);
-const app = App(cfg);
-
+const Application = require('./lib/Application');
+const app = new Application();
+app.init(cfg);
 app.run();
