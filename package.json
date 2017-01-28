@@ -21,7 +21,7 @@
 		"debug": "export DEBUG=* ; npm start",
     "log": "git log | head -5 | tail -1 | awk '{print $1}'",
     "pull": "git pull",
-    "push": "git push",
+    "push": "git log | head -5 | tail -1 | awk '{print $1}'; read -p \"version: \" -e gitcommit; git commit -a -m \"$gitcommit\"; git push",
     "start": "node $(pwd)",
     "stop": "kill -TERM $(ps -ax | grep $(pwd) | head -1 | awk '{print $1}')",
     "test": "node ../cms-1/test"
