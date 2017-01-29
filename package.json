@@ -20,7 +20,7 @@
   "scripts": {
     "debug": "export DEBUG=*; npm start; echo 'debug done.'",
     "log": "git log | head -5 | tail -1 | awk '{print $1}'",
-    "pull": "git pull; echo 'pull done.'",
+    "pull": "git stash; git pull; echo 'pull done.'",
     "push": "npm run log; read -p 'version: ' -e gitcommit; git commit -a -m \"$gitcommit\"; git push; echo 'push done.'",
     "start": "node $(pwd); echo 'start done.'",
     "state": "git status; echo 'state done.'",
