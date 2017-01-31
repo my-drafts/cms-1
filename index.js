@@ -2,7 +2,7 @@
 'use strict';
 
 const Debugger = require('./lib/Debugger');
-const D = Debugger.init({ level: 'all', owner: '/' });
+const D = Debugger.init({ level: 'all', owner: ['/'] });
 
 D.trace('creating Config');
 const Config = require('./lib/Config');
