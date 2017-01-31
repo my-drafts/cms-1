@@ -26,7 +26,7 @@
     "start": "node $(pwd); echo 'start done.'",
     "state": "git status; echo 'state done.'",
     "stop": "pkill -9 $(ps -ax | grep $(pwd) | head -1 | awk '{print $1}'); echo 'stop done.'",
-    "test": "node ../cms-1/test; echo 'test done.'"
+    "test": "node \"$(pwd)/test\"; echo 'test done.'"
   },
   "author": "Sergey Kukharyev",
   "license": "ISC"
