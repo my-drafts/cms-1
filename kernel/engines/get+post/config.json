@@ -1,0 +1,62 @@
+{
+	"binds": [
+		{
+			"enable": true,
+			"name": "get",
+			"path": "./bind/get"
+		},
+		{
+			"enable": true,
+			"name": "post",
+			"path": "./bind/post"
+		}
+	],
+	"get": {
+		"enable": true,
+		"auto": true,
+		"quiet": false,
+		"*/*": {
+			"enable": true,
+			"encoding": "utf8",
+			"size": 2097152,
+			"amount": 128
+		},
+		"get/form-urlencoded": {
+			"size": 2097152,
+			"amount": 128
+		}
+	},
+	"post": {
+		"enable": true,
+		"methods": [
+			"post",
+			"put"
+		],
+		"auto": false,
+		"clean": true,
+		"quiet": false,
+		"*/*": {
+			"enable": true,
+			"encoding": "utf8",
+			"size": 2097152,
+			"amount": 128,
+			"upload": "Infinity",
+			"path": "tmp/upload"
+		},
+		"application/json": {
+			"size": 16777216,
+			"amount": 1024
+		},
+		"application/x-www-form-urlencoded": {
+			"size": 8388608
+		},
+		"multipart/form-data": {
+			"size": 16777216,
+			"amount": 2048,
+			"upload": "Infinity"
+		},
+		"text/plain": {
+			"amount": 64
+		}
+	}
+}

@@ -1,0 +1,19 @@
+{
+	"engines": [
+		{
+			"enable": true,
+			"name": "example",
+			"path": "./example"
+		},
+		{
+			"enable": false,
+			"name": "get+post",
+			"path": "./get+post"
+		},
+		{
+			"enable": false,
+			"name": "meta",
+			"path": "./meta"
+		}
+	]
+}

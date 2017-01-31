@@ -1,0 +1,56 @@
+{
+	"enable": true,
+	"case": "lower",
+	"mode": "trace",
+	"modes": {
+		"fatal": {
+			"alias": ["fatal", "f", 6],
+			"code": 6,
+			"level": "F",
+			"title": "Fatal",
+			"description": "Highest level: important stuff down"
+		},
+		"error": {
+			"alias": ["error", "e", 5],
+			"code": 5,
+			"level": "E",
+			"title": "Error",
+			"description": "For example application crashes / exceptions"
+		},
+		"warning": {
+			"alias": ["warning", "warn", "w", 4],
+			"code": 4,
+			"level": "W",
+			"title": "Warning",
+			"description": "Incorrect behavior but the application can continue"
+		},
+		"information": {
+			"alias": ["information", "info", "i", 3],
+			"code": 3,
+			"level": "I",
+			"title": "Information",
+			"description": "Normal behavior like mail sent, user updated profile etc"
+		},
+		"debug": {
+			"alias": ["debug", "deb", "d", 2],
+			"code": 2,
+			"level": "D",
+			"title": "Debug",
+			"description": "Executed queries, user authenticated, session expired"
+		},
+		"trace": {
+			"alias": ["trace", "t", 1],
+			"code": 1,
+			"level": "T",
+			"title": "Trace",
+			"description": "Begin method X, end method X etc"
+		},
+		"unknown": {
+			"alias": ["unknown", 0],
+			"code": 0,
+			"level": "U",
+			"title": "Unknown",
+			"description": "?"
+		}
+	}
+}
