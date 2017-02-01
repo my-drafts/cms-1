@@ -1,19 +1,21 @@
 #!/usr/bin/env node
 'use strict';
 
-const Debugger = require('./lib/Debugger');
-const D = Debugger.init({ level: 'all', owner: ['/'] });
+const Logger = require('./lib/Logger');
+const Loptions = { enable: true, level: 'all', owner: ['/'] };
+const L = Logger.init(Loptions);
 
-D.trace('creating Config');
-const Config = require('./lib/Config');
-const cfg = new Config(Debugger, require('./config.json'));
-D.trace('created Config');
+L.trace('creating Config');
+const Config = require('./core/Config');
+const config = require('./config.json');
+const cfg = new Config(config);
+L.trace('created Config');
 
-D.trace('creating Application');
-const Application = require('./lib/Application');
-const app = new Application(Debugger, cfg);
-D.trace('created Application');
+L.trace('creating Application');
+const Application = require('./core/Application');
+const app = new Application(cfg);
+L.trace('created Application');
 
-D.trace('runing Application');
+L.trace('runing Application');
 app.run();
-D.trace('runed Application');
+L.trace('runed Application');

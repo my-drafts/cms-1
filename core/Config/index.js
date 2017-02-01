@@ -2,23 +2,23 @@
 'use strict';
 
 const zt = require('ztype');
-const L = require('../Logger').init({ enable: true, level: 'all', owner: ['Config'] });
 
-//const Debugable = require('../Debugable');
-//const Debugger = require('../Debugger');
+const Logger = require('../Logger');
+
+const Loptions = { enable: true, level: 'all', owner: ['Config'] };
+const L = Logger.init(Loptions);
+
+const _cfg2flat = function(result, keys, cfg, it){
+	for(let key in cfg){
+		let ac = zt.as(cfg[key]);
+		if(!ac.o) result[keys.concat(key).join('.')] = cfg[key];
+		else _cfg2flat(result, keys.concat([key]), cfg[key], it + 1);
+	}
+}
 
 const cfg2flat = function(cfg){
 	let result = {};
-	if(zt.as(cfg).o){
-		const flat = function(result, keys, cfg, it){
-			for(let key in cfg){
-				let ac = zt.as(cfg[key]);
-				if(!ac.o) result[keys.concat(key).join('.')] = cfg[key];
-				else flat(result, keys.concat([key]), cfg[key], it + 1);
-			}
-		}
-		f(result, [], cfg, 0);
-	}
+	if(zt.as(cfg).o) _cfg2flat(result, [], cfg, 0);
 	return result;
 }
 
@@ -26,17 +26,19 @@ class Config{
 	get blocks(){ return this._all; }
 
 	constructor(config){
+		L.trace('run', 'constructor');
 		if(zt.as(config).o){
-			var all = Object.keys(config).map(function(block){
-				return { [block]: cfg2flat(config[block]) };
+			L.debug(['config %j', config], 'constructor');
+			let cfg = this;
+			let all = Object.keys(config).map(function(block){
+				return { [block]: cfg.flat(config[block]) };
 			});
 			this._all = Object.assign.apply({}, all);
+			Object.freeze(this);
 		}
 		else{
 			throw L.error('Wrong config', 'constructor');
 		}
-
-		Object.freeze(this);
 	}
 	
 	get(block){
@@ -54,11 +56,11 @@ class Config{
 		L.trace('run', 'set');
 		if(block && block in this._all){
 			L.warn(['Block "%s" overwrite ', block], 'set');
-			this._all[block] = Object.assign({}, this._all[block], cfg2flat(value));
+			this._all[block] = Object.assign({}, this._all[block], this.flat(value));
 		}
 		else if(block){
 			L.debug(['Block "%s" write ', block], 'set');
-			this._all[block] = cfg2flat(value);
+			this._all[block] = this.flat(value);
 		}
 		else{
 			throw L.error(['Block "%s"', block], 'set');
