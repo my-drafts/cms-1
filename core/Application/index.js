@@ -6,15 +6,21 @@ const os = require('os');
 const process = require('process');
 const zt = require('ztype');
 
-const Debugable = require('../Debugable');
-//const Debugger = require('../Debugger');
 const Config = require('../Config');
-//const Core = require('../Core');
+const Logger = require('../../lib/Logger');
+//const Thread = require('../Thread');
 
+const Loptions = {};
+const L = Logger.init(Loptions);
 const osCPUs = os.cpus().length;
 
-class Application extends Debugable{
-	constructor(deb, config){
+
+//const Debugable = require('../Debugable');
+//const Debugger = require('../Debugger');
+
+
+class Application{
+	constructor(config){
 		super(deb, ['Application'], 'all', true);
 
 		if(config instanceof Config){
@@ -53,6 +59,10 @@ class Application extends Debugable{
 			this.debug(['worker id:%s started', this.pid], 'run');
 			//new Core(this)
 		}
+	}
+
+	static init(config){
+		return new Application(config);
 	}
 }
 

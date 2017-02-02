@@ -8,14 +8,15 @@ const L = Logger.init(Loptions);
 L.trace('creating Config');
 const Config = require('./core/Config');
 const config = require('./config.json');
-const cfg = new Config(config);
+const cfg = Config.init(config);
 L.trace('created Config');
 
 L.trace('creating Application');
 const Application = require('./core/Application');
-const app = new Application(cfg);
+const app = Application.init(cfg);
 L.trace('created Application');
 
 L.trace('runing Application');
 app.run();
 L.trace('runed Application');
+  
