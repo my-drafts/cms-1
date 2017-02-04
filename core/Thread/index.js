@@ -8,7 +8,7 @@ var nameSpace = require('./name-space');
 var outCome = require('./out-come');
 var http = require('http');
 
-class Core{
+class Thread{
 	constructor(){
 		
 	}
