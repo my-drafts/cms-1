@@ -1,7 +1,6 @@
 {
   "name": "cms-1",
-  "version": "0.0.45",
-  "description": "",
+  "version": "0.0.46",
   "main": "app.js",
   "dependencies": {
     "debug": "^2.6.0",
@@ -29,5 +28,17 @@
     "test": "node \"$(pwd)/test\"; echo 'test done.'"
   },
   "author": "Sergey Kukharyev",
-  "license": "ISC"
+  "license": "ISC",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergej-kucharev/cms-1.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sergej-kucharev/cms-1/issues"
+  },
+  "homepage": "https://github.com/sergej-kucharev/cms-1#readme",
+  "description": ""
 }
