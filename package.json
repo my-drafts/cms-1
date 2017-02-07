@@ -1,6 +1,6 @@
 {
   "name": "cms-1",
-  "version": "0.0.44",
+  "version": "0.0.45",
   "description": "",
   "main": "app.js",
   "dependencies": {
@@ -14,7 +14,7 @@
     "swig": "^1.4.2",
     "url": "^0.11.0",
     "util": "^0.10.3",
-    "ztype": "^1.1.7"
+    "ztype": "^1.1.8"
   },
   "devDependencies": {},
   "scripts": {
