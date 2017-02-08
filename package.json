@@ -1,9 +1,10 @@
 {
   "name": "cms-1",
-  "version": "0.0.46",
+  "version": "0.0.47",
   "main": "app.js",
   "dependencies": {
     "debug": "^2.6.0",
+    "decimal.js": "^7.1.1",
     "http": "^0.0.0",
     "mongodb": "^2.1.18",
     "multiparty": "^4.1.2",
@@ -13,7 +14,7 @@
     "swig": "^1.4.2",
     "url": "^0.11.0",
     "util": "^0.10.3",
-    "ztype": "^1.1.8"
+    "ztype": "latest"
   },
   "devDependencies": {},
   "scripts": {
